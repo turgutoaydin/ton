@@ -1,67 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pixel Map - Mini App</title>
+  <meta charset="UTF-8">
+  <title>The Open Nations</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
+    html, body {
       margin: 0;
-      font-family: sans-serif;
-      background: #111;
+      padding: 0;
+      background-color: #111;
       color: #eee;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #header {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      align-items: center;
+      z-index: 10;
+    }
+
+    #logo {
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+      border-radius: 8px;
+    }
+
+    #titleBlock {
       display: flex;
       flex-direction: column;
-      align-items: center;
     }
 
-    h1 {
-      margin: 10px;
+    #titleBlock h1 {
+      margin: 0;
+      font-size: 18px;
     }
 
-    #pixelCanvas {
-      border: 2px solid #444;
+    #titleBlock p {
+      margin: 0;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    #infoIcon {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 24px;
+      height: 24px;
       cursor: pointer;
     }
 
-    #infoBox {
-      margin-top: 10px;
+    canvas {
+      display: block;
+    }
+
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background: #222;
-      padding: 10px;
-      border-radius: 5px;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      z-index: 100;
       display: none;
+    }
+
+    .modal h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .modal p {
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    .modal button {
+      margin-top: 10px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      z-index: 99;
     }
   </style>
 </head>
 <body>
-  <h1>🌍 Pixel Haritası</h1>
-  <canvas id="pixelCanvas" width="500" height="300"></canvas>
+  <!-- Header -->
+  <div id="header">
+    <img id="logo" src="logo.png" alt="Logo">
+    <div id="titleBlock">
+      <h1>The Open Nations</h1>
+      <p>TON | Telegram Pixel Land World</p>
+    </div>
+  </div>
 
-  <div id="infoBox">
-    <p><strong>Pixel ID:</strong> <span id="pixelId"></span></p>
-    <p><strong>Başlık:</strong> <span id="pixelTitle"></span></p>
-    <p><strong>Açıklama:</strong> <span id="pixelDesc"></span></p>
+  <!-- Info Icon -->
+  <img id="infoIcon" src="https://img.icons8.com/ios-filled/50/ffffff/info.png" alt="Info" title="Info">
+
+  <!-- Canvas for pixel map -->
+  <canvas id="pixelCanvas" width="1000" height="500"></canvas>
+
+  <!-- Overlay + Modal -->
+  <div id="overlay"></div>
+  <div class="modal" id="pixelModal">
+    <h2>Pixel Bilgisi</h2>
+    <p><strong>ID:</strong> <span id="pixelIdText"></span></p>
+    <p><strong>Tutar:</strong> 2.5 TON</p>
+    <a id="buyButton" target="_blank">
+      <button>Telegram’dan Satın Al</button>
+    </a>
+  </div>
+
+  <div class="modal" id="infoModal">
+    <h2>Oyun Hakkında</h2>
+    <p>
+      Her pixel, gerçek dünya haritası üzerinde bir toprak parçasını temsil eder. Her satın alınan pixel, size ait bir topluluğa dönüşür. Yan yana alınan pikseller birleşerek daha büyük bölgeler oluşturur. Satın alma işlemleri TON üzerinden gerçekleşir. Her pixel 2.5 TON'dur.
+    </p>
+    <button onclick="closeModal()">Kapat</button>
   </div>
 
   <script>
     const canvas = document.getElementById("pixelCanvas");
     const ctx = canvas.getContext("2d");
-
-    const pixelSize = 10;
+    const pixelSize = 20;
     const cols = canvas.width / pixelSize;
     const rows = canvas.height / pixelSize;
 
-    const pixels = {}; // {'x-y': {owner, title, description}}
+    const overlay = document.getElementById("overlay");
+    const pixelModal = document.getElementById("pixelModal");
+    const infoModal = document.getElementById("infoModal");
 
-    function drawGrid() {
+    const pixels = {}; // {'x-y': {owner: 'you'}}
+
+    function drawPixels() {
+      // basit "kara" efekti için: orta kısmı kara gibi kabul et
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           const key = `${x}-${y}`;
-          let fill = "#333"; // default: boş
+          const isLand = y > 6 && y < rows - 6;
+
+          ctx.fillStyle = isLand ? "#444" : "#222";
+
           if (pixels[key]) {
-            fill = pixels[key].owner === "you" ? "#4caf50" : "#ff4444";
+            ctx.fillStyle = pixels[key].owner === 'you' ? "#4caf50" : "#f44336";
           }
-          ctx.fillStyle = fill;
+
           ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize - 1, pixelSize - 1);
         }
       }
@@ -73,34 +176,36 @@
       const y = Math.floor((e.clientY - rect.top) / pixelSize);
       const key = `${x}-${y}`;
 
-      if (pixels[key]) {
-        // Zaten alınmışsa bilgi göster
-        showPixelInfo(key);
-        return;
-      }
-
-      // Satın alma işlemi
-      const title = prompt("Başlık gir:");
-      const description = prompt("Açıklama gir:");
-      pixels[key] = {
-        owner: "you",
-        title,
-        description
-      };
-      drawGrid();
-      showPixelInfo(key);
+      openPixelModal(key);
     });
 
-    function showPixelInfo(key) {
-      const p = pixels[key];
-      if (!p) return;
-      document.getElementById("pixelId").innerText = key;
-      document.getElementById("pixelTitle").innerText = p.title;
-      document.getElementById("pixelDesc").innerText = p.description;
-      document.getElementById("infoBox").style.display = "block";
+    function openPixelModal(pixelId) {
+      document.getElementById("pixelIdText").innerText = pixelId;
+      const message = encodeURIComponent(`Pixel ID: ${pixelId} | Tutar: 2.5 TON`);
+      document.getElementById("buyButton").href = `https://t.me/TheOpenNationsDM?start=${message}`;
+
+      overlay.style.display = "block";
+      pixelModal.style.display = "block";
+
+      // simulate ownership
+      pixels[pixelId] = { owner: 'you' };
+      drawPixels();
     }
 
-    drawGrid();
+    document.getElementById("infoIcon").addEventListener("click", () => {
+      overlay.style.display = "block";
+      infoModal.style.display = "block";
+    });
+
+    overlay.addEventListener("click", closeModal);
+
+    function closeModal() {
+      overlay.style.display = "none";
+      pixelModal.style.display = "none";
+      infoModal.style.display = "none";
+    }
+
+    drawPixels();
   </script>
 </body>
 </html>
