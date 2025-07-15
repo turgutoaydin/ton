@@ -1,667 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>The Open Nations</title>
+  <title>The Open Nations - 3D World</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background-color: #111;
-      color: #eee;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      overflow: hidden; /* Prevent page scroll */
-      /* Prevent bounce effect on iOS */
-      position: fixed;
-    }
-
-    canvas {
-      display: block;
-      cursor: grab;
-      background-color: #111;
-      /* Improve touch performance */
-      touch-action: none;
-    }
-    canvas:active {
-      cursor: grabbing;
-    }
-
-    /* Fixed UI Elements */
-    .fixed-ui {
-      position: fixed;
-      z-index: 10;
-      user-select: none; /* Disable text selection */
-    }
-
-    #header {
-      top: 15px;
-      left: 15px;
-      display: flex;
-      align-items: center;
-      background: rgba(34, 34, 34, 0.8);
-      padding: 8px 12px;
-      border-radius: 12px;
-      backdrop-filter: blur(5px);
-    }
-
-    #logo {
-      width: 50px;
-      height: 50px;
-      margin-right: 12px;
-      border-radius: 8px;
-    }
-
-    #titleBlock h1 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    #titleBlock p {
-      margin: 0;
-      font-size: 12px;
-      color: #aaa;
-    }
-
-    #infoIcon {
-      top: 25px;
-      right: 25px;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      opacity: 0.9;
-      transition: opacity 0.2s;
-    }
-    #infoIcon:hover {
-      opacity: 1;
-    }
-
-    /* Bottom Navigation */
-    #bottomNav {
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(34, 34, 34, 0.9);
-        backdrop-filter: blur(10px);
-        display: flex;
-        justify-content: space-around;
-        padding: 10px 0;
-        border-top: 1px solid #333;
-    }
-
-    .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        cursor: pointer;
-        color: #ccc;
-        font-size: 12px;
-    }
-
-    .nav-item img {
-        width: 28px;
-        height: 28px;
-        margin-bottom: 4px;
-    }
-    .nav-item:hover {
-        color: #fff;
-    }
-
-    /* Modals */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      z-index: 99;
-      backdrop-filter: blur(5px);
-    }
-
-    .modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #2a2a2a;
-      padding: 0; /* Padding will be on the content */
-      border-radius: 15px;
-      width: 350px;
-      max-height: 80vh;
-      z-index: 100;
-      display: none;
-      border: 1px solid #444;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-      overflow: hidden;
-      flex-direction: column;
-    }
-    
-    .modal-content {
-        padding: 25px;
-        overflow-y: auto;
-    }
-
-    .modal-cover-image {
-        width: 100%;
-        height: 150px;
-        object-fit: cover;
-    }
-
-    .modal h2 {
-      margin-top: 0;
-      font-size: 20px;
-      border-bottom: 1px solid #444;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
-    }
-
-    .modal p, .modal .info-line {
-      font-size: 14px;
-      color: #ddd;
-      line-height: 1.6;
-      margin: 8px 0;
-    }
-    .modal p strong, .modal .info-line strong {
-        color: #fff;
-    }
-    .modal a {
-        color: #4caf50;
-        text-decoration: none;
-    }
-
-    .modal button {
-      margin-top: 15px;
-      background: #4caf50;
-      color: white;
-      border: none;
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.2s;
-    }
-    .modal button:hover {
-        background: #45a049;
-    }
-    .modal .contact-button {
-        background-color: #29b6f6;
-    }
-    .modal .contact-button:hover {
-        background-color: #23a1d9;
-    }
-    .modal .close-button {
-        background-color: #555;
-    }
-    .modal .close-button:hover {
-        background-color: #666;
-    }
-
-    /* Specific Modal Styles */
-    .telegram-link { color: #29b6f6 !important; }
-
-    #kurdistanModal .info-line { display: flex; justify-content: space-between; }
-    #kurdistanModal .info-line .value { font-weight: bold; color: #4caf50; }
-    
-    #profileModal .profile-header { display: flex; align-items: center; margin-bottom: 20px; }
-    #profileModal .profile-header img { width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; }
-    #profileModal .profile-header span { font-size: 18px; font-weight: bold; }
-    
-    #profileModal .lands-list { list-style: none; padding: 0; max-height: 250px; overflow-y: auto; }
-    #profileModal .lands-list li { background: #333; padding: 10px; border-radius: 5px; margin-bottom: 8px; cursor: pointer; transition: background-color 0.2s; }
-    #profileModal .lands-list li:hover { background-color: #444; }
-
-    #infoModal .info-logo { display: block; width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 10px;}
-    #infoModal h3 { margin-top: 20px; border-top: 1px solid #444; padding-top: 15px; }
-    #infoModal ul { padding-left: 20px; }
-  </style>
+  <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
+
+  <!-- 3D Sahne için Konteyner -->
+  <div id="world-container"></div>
+
+  <!-- Sabit UI Elemanları -->
   <div id="header" class="fixed-ui">
     <img id="logo" src="assets/images/logo.png" alt="Logo">
     <div id="titleBlock">
       <h1>The Open Nations</h1>
-      <p>TON | Telegram Pixel Land World</p>
+      <p>3D Pixel Land World</p>
     </div>
   </div>
-
-  <img id="infoIcon" class="fixed-ui" src="https://img.icons8.com/ios-filled/100/ffffff/info--v1.png" alt="Info" title="About The Game">
-
-  <canvas id="pixelCanvas"></canvas>
-
+  <img id="infoIcon" class="fixed-ui" src="https://img.icons8.com/ios-filled/100/ffffff/info--v1.png" alt="Info" title="Oyun Hakkında">
   <div id="bottomNav" class="fixed-ui">
-      <div class="nav-item" id="profileBtn">
-          <img src="https://img.icons8.com/ios-glyphs/90/ffffff/user-male-circle.png" alt="Profile">
-          <span>Profile</span>
-      </div>
-      <div class="nav-item" id="mapBtn">
-          <img src="https://img.icons8.com/ios-filled/100/ffffff/map.png" alt="Map">
-          <span>Map</span>
-      </div>
-      <div class="nav-item" id="p2pBtn">
-          <img src="https://img.icons8.com/ios-filled/100/ffffff/two-way-communication.png" alt="P2P">
-          <span>P2P</span>
-      </div>
+      <div class="nav-item" id="profileBtn"><img src="https://img.icons8.com/ios-glyphs/90/ffffff/user-male-circle.png" alt="Profil"><span>Profil</span></div>
+      <div class="nav-item" id="mapBtn"><img src="https://img.icons8.com/ios-filled/100/ffffff/map.png" alt="Harita"><span>Harita</span></div>
+      <div class="nav-item" id="p2pBtn"><img src="https://img.icons8.com/ios-filled/100/ffffff/two-way-communication.png" alt="P2P"><span>P2P</span></div>
   </div>
 
+  <!-- Overlay ve Modallar -->
   <div class="modal-overlay" id="overlay"></div>
 
-  <div class="modal" id="pixelModal">
+  <!-- Dinamik Bölge Bilgi Modalı -->
+  <div class="modal" id="territoryModal">
+    <img id="territoryImage" src="" alt="Bölge Kapağı" class="modal-cover-image">
     <div class="modal-content">
-      <h2>Pixel Information</h2>
-      <p><strong>ID:</strong> <span id="pixelIdText"></span></p>
-      <p><strong>Price:</strong> 2.5 TON</p>
-      <a id="buyButton" target="_blank">
-        <button>Buy via Telegram</button>
-      </a>
-      <button class="close-button" onclick="closeAllModals()">Close</button>
-    </div>
-  </div>
-  
-  <div class="modal" id="kurdistanModal">
-    <img src="assets/images/map.png" alt="Kurdistan Map" class="modal-cover-image">
-    <div class="modal-content">
-        <h2>Kurdistan</h2>
-        <p>This territory represents the nation of Kurdistan, a community-owned region within The Open Nations. You can engage with its economy, participate in its governance, or make an offer for its lands.</p>
-        <div class="info-line"><span>Budget:</span> <span class="value">12.00 TON</span></div>
-        <div class="info-line"><span>Defense:</span> <span class="value">14 LvL</span></div>
-        <div class="info-line"><span>Education:</span> <span class="value">20 LvL</span></div>
-        <div class="info-line"><span>Technology:</span> <span class="value">44 LvL</span></div>
-        <div class="info-line"><span>Economy:</span> <span class="value">32 LvL</span></div>
-        <div class="info-line"><span>Population:</span> <span class="value"><a href="https://t.me/TheOpenNations" target="_blank" class="telegram-link">34 Members</a></span></div>
-        <a id="contactPresidentBtn" href="https://t.me/TheOpenNationsDM" target="_blank">
-            <button class="contact-button">Make an Offer / Contact President</button>
+        <h2 id="territoryTitle"></h2>
+        <p id="territoryDescription"></p>
+        <div id="territoryStatsContainer">
+            <!-- İstatistikler JS tarafından buraya eklenecek -->
+        </div>
+        <a id="territoryActionBtn" href="" target="_blank">
+            <button id="territoryActionText" class="contact-button"></button>
         </a>
-        <button class="close-button" onclick="closeAllModals()">Close</button>
+        <button class="close-button" onclick="closeAllModals()">Kapat</button>
     </div>
   </div>
 
-  <div class="modal" id="profileModal">
-    <div class="modal-content">
-      <div class="profile-header">
-        <img src="https://img.icons8.com/ios-glyphs/90/ffffff/user-male-circle.png" alt="Profile Icon"/>
-        <span id="profileUsername">@TheOpenNationsDM</span>
-      </div>
-      <h2>My Lands</h2>
-      <ul id="landsList" class="lands-list">
-        </ul>
-      <button class="close-button" onclick="closeAllModals()">Close</button>
-    </div>
-  </div>
-
+  <!-- Diğer Modallar -->
   <div class="modal" id="infoModal">
     <div class="modal-content">
       <img src="assets/images/logo.png" alt="Logo" class="info-logo">
-      <h2>About The Game</h2>
-      <p>
-        Each pixel represents a piece of land on the world map. Every purchased pixel becomes a community that you own. Adjacent pixels merge to form larger regions. All transactions are done via TON. Each pixel costs 2.5 TON.
-      </p>
-      <h3>Features</h3>
-      <ul>
-        <li><strong>Digital Ownership:</strong> Buy and own digital land on a persistent world map.</li>
-        <li><strong>Community Building:</strong> Form nations by acquiring adjacent pixels with others.</li>
-        <li><strong>TON-Based Economy:</strong> All assets are traded using The Open Network cryptocurrency.</li>
-        <li><strong>Future Development:</strong> We are building towards a vast, decentralized world with rich gameplay mechanics.</li>
-      </ul>
-      <button class="close-button" onclick="closeAllModals()">Close</button>
+      <h2>Oyun Hakkında</h2>
+      <p>Her küp, 3D dünya haritası üzerinde bir toprak parçasını temsil eder. Seviyesi yükseldikçe küpün yüksekliği artar. Tüm işlemler TON üzerinden yapılır.</p>
+      <div class="info-section">
+        <img src="https://img.icons8.com/ios-glyphs/90/FFFFFF/wave--v1.png" alt="Deniz Sembolü" class="info-section-icon">
+        <div>
+          <h3>Açık Denizler Satın Alınamaz</h3>
+          <p>Haritadaki mavi alanlar okyanusları temsil eder ve kişisel olarak satın alınamaz.</p>
+        </div>
+      </div>
+      <button class="close-button" onclick="closeAllModals()">Kapat</button>
     </div>
   </div>
-
   <div class="modal" id="comingSoonModal">
     <div class="modal-content">
-      <h2>Coming Soon</h2>
-      <p>
-        This feature is currently under development. Please check back later.
-      </p>
-      <button class="close-button" onclick="closeAllModals()">Close</button>
+      <h2>Çok Yakında</h2>
+      <p>Bu özellik şu anda geliştirme aşamasındadır.</p>
+      <button class="close-button" onclick="closeAllModals()">Kapat</button>
     </div>
   </div>
 
-  <script>
-    const canvas = document.getElementById("pixelCanvas");
-    const ctx = canvas.getContext("2d");
+  <!-- 3D Kütüphaneleri -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-    // --- Modal Elements ---
-    const overlay = document.getElementById("overlay");
-    const modals = {
-        pixel: document.getElementById("pixelModal"),
-        info: document.getElementById("infoModal"),
-        kurdistan: document.getElementById("kurdistanModal"),
-        profile: document.getElementById("profileModal"),
-        comingSoon: document.getElementById("comingSoonModal"),
-    };
-
-    // --- Map & View Settings ---
-    const initialPixelSize = 16;
-    const worldWidth = 400; 
-    const worldHeight = 200;
-
-    let scale = 0.5;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    // --- Interaction State ---
-    let isPointerDown = false;
-    let lastMouseX, lastMouseY;
-    let pointerStart = { x: 0, y: 0 };
-    let lastPinchDist = 0;
-    
-    // --- Data Definitions ---
-    const ownedPixels = {};
-    const seaPixels = new Set();
-    let kurdistanPixels; // Will be defined after world generation
-
-    // --- NEW: Procedural World Generation ---
-    function generateWorld() {
-        console.log("Generating a new world...");
-        const noise = new SimpleNoise();
-        const featureSize = 80; // Larger value = larger continents/islands
-        const seaLevel = 0.55; // 0.0 to 1.0. Higher value = more sea
-        
-        seaPixels.clear();
-
-        for (let y = 0; y < worldHeight; y++) {
-            for (let x = 0; x < worldWidth; x++) {
-                // Get a noise value between 0 and 1
-                let value = noise.get(x / featureSize, y / featureSize);
-
-                // Create a radial gradient to ensure edges are sea
-                const dx = x - worldWidth / 2;
-                const dy = y - worldHeight / 2;
-                const distFromCenter = Math.sqrt(dx * dx + dy * dy);
-                const maxDist = worldWidth / 2;
-                const gradient = distFromCenter / maxDist; // 0 at center, 1 at edge
-                
-                // Lower the land height near the edges
-                value = (value * 1.2) - (gradient * gradient);
-
-                if (value < seaLevel) {
-                    seaPixels.add(`${x}-${y}`);
-                }
-            }
-        }
-        console.log("World generation complete.");
-    }
-
-    // A simple noise generator for more natural maps
-    function SimpleNoise() {
-        const p = new Uint8Array(512);
-        for(let i=0; i < 256; i++) p[i] = i;
-        for(let i=255; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [p[i], p[j]] = [p[j], p[i]];
-        }
-        for(let i=0; i < 256; i++) p[i+256] = p[i];
-
-        const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
-        const lerp = (t, a, b) => a + t * (b - a);
-        const grad = (hash, x, y) => {
-            const h = hash & 15;
-            const u = h < 8 ? x : y;
-            const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
-            return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
-        }
-
-        this.get = (x, y) => {
-            const X = Math.floor(x) & 255;
-            const Y = Math.floor(y) & 255;
-            x -= Math.floor(x);
-            y -= Math.floor(y);
-            const u = fade(x);
-            const v = fade(y);
-            const aa = p[p[X] + Y];
-            const ab = p[p[X] + Y + 1];
-            const ba = p[p[X + 1] + Y];
-            const bb = p[p[X + 1] + Y + 1];
-            
-            const res = lerp(v,
-                lerp(u, grad(p[aa], x, y), grad(p[ba], x - 1, y)),
-                lerp(u, grad(p[ab], x, y - 1), grad(p[bb], x - 1, y - 1))
-            );
-            return (res + 1) / 2; // Return value between 0 and 1
-        };
-    }
-
-    // Reposition the Kurdistan territory to a guaranteed land spot
-    function placeTerritories() {
-        let placed = false;
-        let attemptX = Math.floor(worldWidth * 0.5);
-        let attemptY = Math.floor(worldHeight * 0.5);
-
-        while(!placed) {
-            let isAllLand = true;
-            for(const coord of kurdistanPixelCoordsTemplate) {
-                if (seaPixels.has(`${coord.x + attemptX}-${coord.y + attemptY}`)) {
-                    isAllLand = false;
-                    break;
-                }
-            }
-            if(isAllLand) {
-                kurdistanPixels = new Set(kurdistanPixelCoordsTemplate.map(p => `${p.x + attemptX}-${p.y + attemptY}`));
-                placed = true;
-            } else {
-                attemptX += 5; // Move to a new spot and retry
-                if(attemptX > worldWidth) { // Failsafe
-                    console.error("Could not place Kurdistan territory on land.");
-                    kurdistanPixels = new Set();
-                    break;
-                }
-            }
-        }
-    }
-
-    const kurdistanPixelCoordsTemplate = [
-        {x: 0, y: 0}, {x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0},
-        {x: -1, y: 1}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 2, y: 1}, {x: 3, y: 1},
-        {x: -1, y: 2}, {x: 0, y: 2}, {x: 1, y: 2}, {x: 2, y: 2}, {x: 3, y: 2},
-        {x: 0, y: 3}, {x: 1, y: 3}, {x: 2, y: 3},
-        {x: 1, y: 4}, {x: 2, y: 4},
-    ];
-
-    // --- Drawing Function ---
-    function draw() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-
-      ctx.save();
-      ctx.translate(offsetX, offsetY);
-      ctx.scale(scale, scale);
-      
-      const view = {
-          x: -offsetX / scale, y: -offsetY / scale,
-          w: canvas.width / scale, h: canvas.height / scale
-      };
-      
-      const startCol = Math.max(0, Math.floor(view.x / initialPixelSize));
-      const endCol = Math.min(worldWidth, Math.ceil((view.x + view.w) / initialPixelSize));
-      const startRow = Math.max(0, Math.floor(view.y / initialPixelSize));
-      const endRow = Math.min(worldHeight, Math.ceil((view.y + view.h) / initialPixelSize));
-
-      for (let y = startRow; y < endRow; y++) {
-        for (let x = startCol; x < endCol; x++) {
-          const key = `${x}-${y}`;
-          
-          if (kurdistanPixels.has(key)) ctx.fillStyle = "#ff5722";
-          else if (seaPixels.has(key)) ctx.fillStyle = "#2c3e50"; // Dull blue for sea
-          else if (ownedPixels[key]) ctx.fillStyle = ownedPixels[key].owner === 'you' ? "#4caf50" : "#f44336";
-          else ctx.fillStyle = "#444";
-
-          ctx.fillRect(x * initialPixelSize, y * initialPixelSize, initialPixelSize - 1, initialPixelSize - 1);
-        }
-      }
-
-      ctx.restore();
-      requestAnimationFrame(draw);
-    }
-    
-    // --- Event Handlers (Mouse & Touch) ---
-    function onPointerDown(e) {
-        isPointerDown = true;
-        canvas.style.cursor = 'grabbing';
-        if (e.type === 'mousedown') {
-            pointerStart.x = e.clientX;
-            pointerStart.y = e.clientY;
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-        } else { // Touch
-            pointerStart.x = e.touches[0].clientX;
-            pointerStart.y = e.touches[0].clientY;
-            lastMouseX = e.touches[0].clientX;
-            lastMouseY = e.touches[0].clientY;
-            if (e.touches.length === 2) {
-                lastPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            }
-        }
-    }
-
-    function onPointerMove(e) {
-        if (!isPointerDown) return;
-        e.preventDefault(); // Prevent scrolling on mobile
-
-        if (e.type === 'mousemove') {
-            const dx = e.clientX - lastMouseX;
-            const dy = e.clientY - lastMouseY;
-            offsetX += dx;
-            offsetY += dy;
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-        } else { // Touch
-            if (e.touches.length === 1) { // Pan
-                const dx = e.touches[0].clientX - lastMouseX;
-                const dy = e.touches[0].clientY - lastMouseY;
-                offsetX += dx;
-                offsetY += dy;
-                lastMouseX = e.touches[0].clientX;
-                lastMouseY = e.touches[0].clientY;
-            } else if (e.touches.length === 2) { // Pinch Zoom
-                const currentPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                const zoomFactor = currentPinchDist / lastPinchDist;
-                
-                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-                const newScale = Math.max(0.1, Math.min(10, scale * zoomFactor));
-
-                const worldX = (midX - offsetX) / scale;
-                const worldY = (midY - offsetY) / scale;
-
-                offsetX = midX - worldX * newScale;
-                offsetY = midY - worldY * newScale;
-
-                scale = newScale;
-                lastPinchDist = currentPinchDist;
-            }
-        }
-    }
-
-    function onPointerUp(e) {
-        if (!isPointerDown) return;
-        isPointerDown = false;
-        canvas.style.cursor = 'grab';
-        lastPinchDist = 0;
-
-        // Handle clicks/taps
-        const endX = e.type === 'mouseup' ? e.clientX : e.changedTouches[0].clientX;
-        const endY = e.type === 'mouseup' ? e.clientY : e.changedTouches[0].clientY;
-        const dragDistance = Math.hypot(endX - pointerStart.x, endY - pointerStart.y);
-
-        if (dragDistance < 5) {
-            handleMapClick(endX, endY);
-        }
-    }
-
-    function handleMapClick(clientX, clientY) {
-        const worldX = (clientX - offsetX) / scale;
-        const worldY = (clientY - offsetY) / scale;
-        const x = Math.floor(worldX / initialPixelSize);
-        const y = Math.floor(worldY / initialPixelSize);
-
-        if (x < 0 || x >= worldWidth || y < 0 || y >= worldHeight) return;
-        const key = `${x}-${y}`;
-
-        if (kurdistanPixels.has(key)) openModal(modals.kurdistan);
-        else if (seaPixels.has(key)) alert("Open seas cannot be purchased.");
-        else {
-            document.getElementById("pixelIdText").innerText = key;
-            const message = encodeURIComponent(`Hello, I would like to buy the pixel with ID: ${key}`);
-            document.getElementById("buyButton").href = `https://t.me/TheOpenNationsDM?start=${message}`;
-            openModal(modals.pixel);
-        }
-    }
-    
-    // Mouse Wheel Zoom
-    canvas.addEventListener("wheel", (e) => {
-        e.preventDefault();
-        const zoomIntensity = 0.1;
-        const zoomFactor = Math.exp((e.deltaY < 0 ? 1 : -1) * zoomIntensity);
-        const newScale = Math.max(0.1, Math.min(10, scale * zoomFactor));
-        const worldX = (e.clientX - offsetX) / scale;
-        const worldY = (e.clientY - offsetY) / scale;
-        offsetX = e.clientX - worldX * newScale;
-        offsetY = e.clientY - worldY * newScale;
-        scale = newScale;
-    });
-
-    // Attach all pointer events
-    canvas.addEventListener('mousedown', onPointerDown);
-    canvas.addEventListener('mousemove', onPointerMove);
-    window.addEventListener('mouseup', onPointerUp); // Use window to catch mouseup outside canvas
-    canvas.addEventListener('touchstart', onPointerDown);
-    canvas.addEventListener('touchmove', onPointerMove);
-    canvas.addEventListener('touchend', onPointerUp);
-
-
-    // --- Modal Control & UI Listeners ---
-    function openModal(modal) { overlay.style.display = "block"; modal.style.display = "flex"; }
-    function closeAllModals() { overlay.style.display = "none"; for (const key in modals) { modals[key].style.display = "none"; } }
-
-    document.getElementById("infoIcon").addEventListener("click", () => openModal(modals.info));
-    overlay.addEventListener("click", closeAllModals);
-    
-    document.getElementById("profileBtn").addEventListener("click", () => {
-      const landsList = document.getElementById('landsList');
-      landsList.innerHTML = '';
-      kurdistanPixels.forEach(key => {
-        const listItem = document.createElement('li');
-        listItem.textContent = `Pixel (${key.replace('-',', ')})`;
-        listItem.onclick = () => {
-          const [x, y] = key.split('-').map(Number);
-          goToPixel(x, y);
-        };
-        landsList.appendChild(listItem);
-      });
-      openModal(modals.profile);
-    });
-
-    document.getElementById("p2pBtn").addEventListener("click", () => openModal(modals.comingSoon));
-    
-    document.getElementById("mapBtn").addEventListener("click", () => {
-        scale = 0.5;
-        offsetX = (canvas.width - worldWidth * initialPixelSize * scale) / 2;
-        offsetY = (canvas.height - worldHeight * initialPixelSize * scale) / 2;
-    });
-
-    function goToPixel(x, y) {
-      closeAllModals();
-      scale = 4;
-      const targetX = x * initialPixelSize + initialPixelSize / 2;
-      const targetY = y * initialPixelSize + initialPixelSize / 2;
-      offsetX = canvas.width / 2 - targetX * scale;
-      offsetY = canvas.height / 2 - targetY * scale;
-    }
-
-    // --- Initialization ---
-    function initialize() {
-        generateWorld();
-        placeTerritories();
-        offsetX = (window.innerWidth - worldWidth * initialPixelSize * scale) / 2;
-        offsetY = (window.innerHeight - worldHeight * initialPixelSize * scale) / 2;
-        requestAnimationFrame(draw);
-    }
-
-    initialize();
-  </script>
+  <!-- Harita Verisi ve Ana Mantık -->
+  <script src="assets/js/mapData.js"></script>
+  <script src="assets/js/main.js"></script>
 </body>
 </html>
