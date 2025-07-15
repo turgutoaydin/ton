@@ -1,73 +1,106 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>The Open Nations</title>
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pixel Map - Mini App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 10px;
+    }
+
+    #pixelCanvas {
+      border: 2px solid #444;
+      cursor: pointer;
+    }
+
+    #infoBox {
+      margin-top: 10px;
+      background: #222;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-    <div id="app-container">
-        <header id="main-header">
-            <img src="assets/images/logo.png" alt="The Open Nations Logo" id="app-logo">
-            <span class="logo-text">The Open Nations</span>
-            <div id="ton-connect-button" style="margin-left: auto;"></div>
-        </header>
+  <h1>🌍 Pixel Haritası</h1>
+  <canvas id="pixelCanvas" width="500" height="300"></canvas>
 
-        <main id="main-content">
-            <div id="map-view" class="view active">
-                <canvas id="game-canvas"></canvas>
-            </div>
-            <div id="p2p-view" class="view">
-                <div class="placeholder-page">
-                    <h2>P2P Pazar Yeri</h2>
-                    <p>Çok Yakında! Uluslarını burada takas edebilir veya satabilirsin.</p>
-                </div>
-            </div>
-            <div id="profile-view" class="view">
-                <div class="profile-page">
-                    <h2>Profilim</h2>
-                    <div id="telegram-user-info">
-                        <p>Kullanıcı Adı: <span id="telegram-username">Yükleniyor...</span></p>
-                        <p>Sahip olduğun uluslar burada listelenecek.</p>
-                    </div>
-                </div>
-            </div>
-        </main>
+  <div id="infoBox">
+    <p><strong>Pixel ID:</strong> <span id="pixelId"></span></p>
+    <p><strong>Başlık:</strong> <span id="pixelTitle"></span></p>
+    <p><strong>Açıklama:</strong> <span id="pixelDesc"></span></p>
+  </div>
 
-        <aside id="info-panel" class="off-canvas">
-            <div class="panel-header">
-                <h3 id="panel-title">Ulus Detayları</h3>
-                <button id="panel-close-button">×</button>
-            </div>
-            <div id="panel-content" class="panel-body">
-                <p>Haritadan bir ulus seçin.</p>
-            </div>
-        </aside>
-        <div id="panel-overlay" class="hidden"></div>
+  <script>
+    const canvas = document.getElementById("pixelCanvas");
+    const ctx = canvas.getContext("2d");
 
-        <nav id="bottom-nav">
-            <button class="nav-button active" data-view="map-view">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                <span>Harita</span>
-            </button>
-            <button class="nav-button" data-view="p2p-view">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l-5.5 9h11z"></path><path d="M12 22l5.5-9h-11z"></path></svg>
-                <span>P2P</span>
-            </button>
-            <button class="nav-button" data-view="profile-view">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                <span>Profil</span>
-            </button>
-        </nav>
-    </div>
+    const pixelSize = 10;
+    const cols = canvas.width / pixelSize;
+    const rows = canvas.height / pixelSize;
 
-    <script src="assets/js/main.js" type="module"></script>
-    <script src="assets/js/CanvasRenderer.js" type="module"></script>
-    <script src="assets/js/InfoPanel.js" type="module"></script>
-    <script src="assets/js/InteractionHeader.js" type="module"></script>
-    <script src="assets/js/mapData.js" type="module"></script>
+    const pixels = {}; // {'x-y': {owner, title, description}}
+
+    function drawGrid() {
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const key = `${x}-${y}`;
+          let fill = "#333"; // default: boş
+          if (pixels[key]) {
+            fill = pixels[key].owner === "you" ? "#4caf50" : "#ff4444";
+          }
+          ctx.fillStyle = fill;
+          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize - 1, pixelSize - 1);
+        }
+      }
+    }
+
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / pixelSize);
+      const y = Math.floor((e.clientY - rect.top) / pixelSize);
+      const key = `${x}-${y}`;
+
+      if (pixels[key]) {
+        // Zaten alınmışsa bilgi göster
+        showPixelInfo(key);
+        return;
+      }
+
+      // Satın alma işlemi
+      const title = prompt("Başlık gir:");
+      const description = prompt("Açıklama gir:");
+      pixels[key] = {
+        owner: "you",
+        title,
+        description
+      };
+      drawGrid();
+      showPixelInfo(key);
+    });
+
+    function showPixelInfo(key) {
+      const p = pixels[key];
+      if (!p) return;
+      document.getElementById("pixelId").innerText = key;
+      document.getElementById("pixelTitle").innerText = p.title;
+      document.getElementById("pixelDesc").innerText = p.description;
+      document.getElementById("infoBox").style.display = "block";
+    }
+
+    drawGrid();
+  </script>
 </body>
 </html>
