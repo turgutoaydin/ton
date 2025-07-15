@@ -30,23 +30,29 @@ export class CanvasRenderer {
         this.camera.y = (this.canvas.height - this.mapHeight * this.camera.zoom) / 2;
     }
     
-    drawMap() {
-        console.log("Harita çiziliyor...", this.mapWidth, this.mapHeight, this.camera);
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.save();
-        this.ctx.translate(this.camera.x, this.camera.y);
-        this.ctx.scale(this.camera.zoom, this.camera.zoom);
+drawMap() {
+    console.log("Harita çiziliyor...", this.mapWidth, this.mapHeight, this.camera);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.save();
+    this.ctx.translate(this.camera.x, this.camera.y);
+    this.ctx.scale(this.camera.zoom, this.camera.zoom);
 
-        for (let y = 0; y < this.mapHeight; y++) {
-            for (let x = 0; x < this.mapWidth; x++) {
-                if (this.mapData[y][x] === 1) {
-                    this.ctx.fillStyle = '#5288c1';
-                    this.ctx.fillRect(x, y, 1, 1);
-                }
+    let hasDrawn = false;
+    for (let y = 0; y < this.mapHeight; y++) {
+        for (let x = 0; x < this.mapWidth; x++) {
+            if (this.mapData[y][x] === 1) {
+                this.ctx.fillStyle = '#5288c1';
+                this.ctx.fillRect(x, y, 1, 1);
+                hasDrawn = true;
             }
         }
-        this.ctx.restore();
     }
+    if (!hasDrawn) {
+        this.ctx.fillStyle = 'red';
+        this.ctx.fillRect(0, 0, 10, 10); // Debug karesi
+    }
+    this.ctx.restore();
+}
 
     screenToMapCoordinates(screenX, screenY) {
         const mapX = Math.floor((screenX - this.camera.x) / this.camera.zoom);
