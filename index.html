@@ -1,38 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="UTF-8">
   <title>The Open Nations</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
     html, body {
       margin: 0;
       padding: 0;
       background-color: #111;
       color: #eee;
-      font-family: Arial, sans-serif;
-      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden; /* Sayfa kaydırmasını engelle */
+    }
+
+    canvas {
+      display: block;
+      cursor: grab;
+    }
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Sabit UI Elemanları */
+    .fixed-ui {
+      position: fixed;
+      z-index: 10;
+      user-select: none; /* Metin seçmeyi engelle */
     }
 
     #header {
-      position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 15px;
+      left: 15px;
       display: flex;
       align-items: center;
-      z-index: 10;
+      background: rgba(34, 34, 34, 0.8);
+      padding: 8px 12px;
+      border-radius: 12px;
+      backdrop-filter: blur(5px);
     }
 
     #logo {
       width: 50px;
       height: 50px;
-      margin-right: 10px;
+      margin-right: 12px;
       border-radius: 8px;
-    }
-
-    #titleBlock {
-      display: flex;
-      flex-direction: column;
     }
 
     #titleBlock h1 {
@@ -47,16 +59,61 @@
     }
 
     #infoIcon {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      width: 24px;
-      height: 24px;
+      top: 25px;
+      right: 25px;
+      width: 32px;
+      height: 32px;
       cursor: pointer;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+    #infoIcon:hover {
+      opacity: 1;
     }
 
-    canvas {
-      display: block;
+    /* Alt Navigasyon */
+    #bottomNav {
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(34, 34, 34, 0.9);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        border-top: 1px solid #333;
+    }
+
+    .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+        color: #ccc;
+        font-size: 12px;
+    }
+
+    .nav-item img {
+        width: 28px;
+        height: 28px;
+        margin-bottom: 4px;
+    }
+    .nav-item:hover {
+        color: #fff;
+    }
+
+
+    /* Modal Pencereler */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      z-index: 99;
+      backdrop-filter: blur(5px);
     }
 
     .modal {
@@ -64,64 +121,105 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: #222;
-      padding: 20px;
-      border-radius: 10px;
-      width: 300px;
+      background: #2a2a2a;
+      padding: 25px;
+      border-radius: 15px;
+      width: 320px;
       z-index: 100;
       display: none;
+      border: 1px solid #444;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     }
 
     .modal h2 {
       margin-top: 0;
-      font-size: 18px;
+      font-size: 20px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
     }
 
-    .modal p {
+    .modal p, .modal .info-line {
       font-size: 14px;
-      color: #ccc;
+      color: #ddd;
+      line-height: 1.6;
+      margin: 8px 0;
+    }
+    .modal p strong, .modal .info-line strong {
+        color: #fff;
+    }
+    .modal a {
+        color: #4caf50;
+        text-decoration: none;
     }
 
     .modal button {
-      margin-top: 10px;
+      margin-top: 15px;
       background: #4caf50;
       color: white;
       border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
       cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+    .modal button:hover {
+        background: #45a049;
+    }
+    .modal .close-button {
+        background-color: #555;
+    }
+    .modal .close-button:hover {
+        background-color: #666;
     }
 
-    #overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      z-index: 99;
+    /* Kürdistan Bilgi Modalı için özel stiller */
+    #kurdistanModal .info-line {
+        display: flex;
+        justify-content: space-between;
     }
+    #kurdistanModal .info-line .value {
+        font-weight: bold;
+        color: #4caf50;
+    }
+    #kurdistanModal .telegram-link {
+        color: #29b6f6;
+    }
+
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div id="header">
-    <img id="logo" src="logo.png" alt="Logo">
+  <div id="header" class="fixed-ui">
+    <img id="logo" src="assets/images/logo.png" alt="Logo">
     <div id="titleBlock">
       <h1>The Open Nations</h1>
       <p>TON | Telegram Pixel Land World</p>
     </div>
   </div>
 
-  <!-- Info Icon -->
-  <img id="infoIcon" src="https://img.icons8.com/ios-filled/50/ffffff/info.png" alt="Info" title="Info">
+  <img id="infoIcon" class="fixed-ui" src="https://img.icons8.com/ios-filled/100/ffffff/info--v1.png" alt="Info" title="Oyun Hakkında">
 
-  <!-- Canvas for pixel map -->
-  <canvas id="pixelCanvas" width="1000" height="500"></canvas>
+  <canvas id="pixelCanvas"></canvas>
 
-  <!-- Overlay + Modal -->
-  <div id="overlay"></div>
+  <div id="bottomNav" class="fixed-ui">
+      <div class="nav-item" id="profileBtn">
+          <img src="https://img.icons8.com/ios-glyphs/90/ffffff/user-male-circle.png" alt="Profil">
+          <span>Profil</span>
+      </div>
+      <div class="nav-item" id="mapBtn">
+          <img src="https://img.icons8.com/ios-filled/100/ffffff/map.png" alt="Harita">
+          <span>Harita</span>
+      </div>
+      <div class="nav-item" id="p2pBtn">
+          <img src="https://img.icons8.com/ios-filled/100/ffffff/data-transfer.png" alt="P2P">
+          <span>P2P</span>
+      </div>
+  </div>
+
+  <div class="modal-overlay" id="overlay"></div>
+
   <div class="modal" id="pixelModal">
     <h2>Pixel Bilgisi</h2>
     <p><strong>ID:</strong> <span id="pixelIdText"></span></p>
@@ -129,83 +227,271 @@
     <a id="buyButton" target="_blank">
       <button>Telegram’dan Satın Al</button>
     </a>
+    <button class="close-button" onclick="closeAllModals()">Kapat</button>
+  </div>
+  
+  <div class="modal" id="kurdistanModal">
+    <h2>Kürdistan</h2>
+    <div class="info-line"><span>Bütçe:</span> <span class="value">12.00 TON</span></div>
+    <div class="info-line"><span>Savunma:</span> <span class="value">14 LvL</span></div>
+    <div class="info-line"><span>Eğitim:</span> <span class="value">20 LvL</span></div>
+    <div class="info-line"><span>Teknoloji:</span> <span class="value">44 LvL</span></div>
+    <div class="info-line"><span>Ekonomi:</span> <span class="value">32 LvL</span></div>
+    <div class="info-line"><span>Nüfus:</span> <span class="value"><a href="https://t.me/TheOpenNations" target="_blank" class="telegram-link">34 Üye</a></span></div>
+    <hr style="border-color: #444; margin: 15px 0;">
+    <p style="font-size: 12px; color: #aaa; text-align: center;">
+      Başkan: <a href="https://t.me/TheOpenNationsDM" target="_blank" class="telegram-link">@TheOpenNationsDM</a><br>
+      Sohbet: <a href="https://t.me/TheOpenNationsChat" target="_blank" class="telegram-link">@TheOpenNationsChat</a>
+    </p>
+    <button class="close-button" onclick="closeAllModals()">Kapat</button>
   </div>
 
   <div class="modal" id="infoModal">
     <h2>Oyun Hakkında</h2>
     <p>
-      Her pixel, gerçek dünya haritası üzerinde bir toprak parçasını temsil eder. Her satın alınan pixel, size ait bir topluluğa dönüşür. Yan yana alınan pikseller birleşerek daha büyük bölgeler oluşturur. Satın alma işlemleri TON üzerinden gerçekleşir. Her pixel 2.5 TON'dur.
+      Her pixel, dünya haritası üzerinde bir toprak parçasını temsil eder. Satın alınan her pixel, size ait bir topluluğa dönüşür. Yan yana alınan pikseller birleşerek daha büyük bölgeler oluşturur. Satın alma işlemleri TON üzerinden gerçekleşir. Her pixel 2.5 TON'dur.
     </p>
-    <button onclick="closeModal()">Kapat</button>
+    <button class="close-button" onclick="closeAllModals()">Kapat</button>
   </div>
+
+  <div class="modal" id="comingSoonModal">
+    <h2>Çok Yakında</h2>
+    <p>
+      Bu özellik şu anda geliştirme aşamasındadır. Lütfen daha sonra tekrar kontrol edin.
+    </p>
+    <button class="close-button" onclick="closeAllModals()">Kapat</button>
+  </div>
+
 
   <script>
     const canvas = document.getElementById("pixelCanvas");
     const ctx = canvas.getContext("2d");
-    const pixelSize = 20;
-    const cols = canvas.width / pixelSize;
-    const rows = canvas.height / pixelSize;
 
+    // --- Modal Elemanları ---
     const overlay = document.getElementById("overlay");
-    const pixelModal = document.getElementById("pixelModal");
-    const infoModal = document.getElementById("infoModal");
+    const modals = {
+        pixel: document.getElementById("pixelModal"),
+        info: document.getElementById("infoModal"),
+        kurdistan: document.getElementById("kurdistanModal"),
+        comingSoon: document.getElementById("comingSoonModal"),
+    };
 
-    const pixels = {}; // {'x-y': {owner: 'you'}}
+    // --- Harita ve Görünüm Ayarları ---
+    let pixelSize = 25; // Başlangıç pixel boyutu
+    const initialPixelSize = 25;
+    const worldWidth = 100; // Dünya genişliği (pixel cinsinden)
+    const worldHeight = 60; // Dünya yüksekliği (pixel cinsinden)
 
-    function drawPixels() {
-      // basit "kara" efekti için: orta kısmı kara gibi kabul et
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
+    // Kamera/Görünüm
+    let scale = 1.0;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    // Sürükleme (Panning) için
+    let isDragging = false;
+    let lastMouseX, lastMouseY;
+
+    // --- Veri Tanımlamaları ---
+    const ownedPixels = {}; // Sahip olunan pixeller: {'x-y': {owner: 'you'}}
+
+    const seaPixels = new Set();
+    for (let y = 0; y < 7; y++) for (let x = 0; x < worldWidth; x++) seaPixels.add(`${x}-${y}`);
+    for (let y = worldHeight - 7; y < worldHeight; y++) for (let x = 0; x < worldWidth; x++) seaPixels.add(`${x}-${y}`);
+    for (let x = 0; x < 10; x++) for (let y = 0; y < worldHeight; y++) seaPixels.add(`${x}-${y}`);
+    for (let x = worldWidth - 10; x < worldWidth; x++) for (let y = 0; y < worldHeight; y++) seaPixels.add(`${x}-${y}`);
+
+
+    const kurdistanPixelCoords = [
+        {x: 46, y: 25}, {x: 47, y: 25}, {x: 48, y: 25}, {x: 49, y: 25}, {x: 50, y: 25}, {x: 51, y: 25}, {x: 52, y: 25},
+        {x: 45, y: 26}, {x: 46, y: 26}, {x: 47, y: 26}, {x: 48, y: 26}, {x: 49, y: 26}, {x: 50, y: 26}, {x: 51, y: 26}, {x: 52, y: 26}, {x: 53, y: 26},
+        {x: 45, y: 27}, {x: 46, y: 27}, {x: 47, y: 27}, {x: 48, y: 27}, {x: 49, y: 27}, {x: 50, y: 27}, {x: 51, y: 27}, {x: 52, y: 27}, {x: 53, y: 27}, {x: 54, y: 27},
+        {x: 46, y: 28}, {x: 47, y: 28}, {x: 48, y: 28}, {x: 49, y: 28}, {x: 50, y: 28}, {x: 51, y: 28}, {x: 52, y: 28}, {x: 53, y: 28},
+        {x: 48, y: 29}, {x: 49, y: 29}, {x: 50, y: 29}, {x: 51, y: 29}, {x: 52, y: 29},
+        {x: 49, y: 30}, {x: 50, y: 30}, {x: 51, y: 30}
+    ];
+    const kurdistanPixels = new Set(kurdistanPixelCoords.map(p => `${p.x}-${p.y}`));
+
+    // --- Çizim Fonksiyonu ---
+    function draw() {
+      // Canvas'ı ekran boyutuna ayarla
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      // Temizle
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Kamera dönüşümlerini uygula (pan & zoom)
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.scale(scale, scale);
+      
+      const currentPixelSize = initialPixelSize; // Pixel boyutu sabit kalır, scale değişir
+
+      // Sadece görünür pikselleri çiz (Performans için)
+      const view = {
+          x: -offsetX / scale,
+          y: -offsetY / scale,
+          w: canvas.width / scale,
+          h: canvas.height / scale
+      };
+      
+      const startCol = Math.floor(view.x / currentPixelSize);
+      const endCol = Math.ceil((view.x + view.w) / currentPixelSize);
+      const startRow = Math.floor(view.y / currentPixelSize);
+      const endRow = Math.ceil((view.y + view.h) / currentPixelSize);
+
+      for (let y = startRow; y < endRow; y++) {
+        for (let x = startCol; x < endCol; x++) {
+          if (x < 0 || x >= worldWidth || y < 0 || y >= worldHeight) continue;
+
           const key = `${x}-${y}`;
-          const isLand = y > 6 && y < rows - 6;
-
-          ctx.fillStyle = isLand ? "#444" : "#222";
-
-          if (pixels[key]) {
-            ctx.fillStyle = pixels[key].owner === 'you' ? "#4caf50" : "#f44336";
+          
+          if (kurdistanPixels.has(key)) {
+            ctx.fillStyle = "#ff5722"; // Kürdistan pikselleri için özel renk
+          } else if (seaPixels.has(key)) {
+            ctx.fillStyle = "#1d3557"; // Deniz rengi
+          } else if (ownedPixels[key]) {
+            ctx.fillStyle = ownedPixels[key].owner === 'you' ? "#4caf50" : "#f44336"; // Satın alınmış
+          } else {
+            ctx.fillStyle = "#444"; // Boş kara
           }
 
-          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize - 1, pixelSize - 1);
+          ctx.fillRect(x * currentPixelSize, y * currentPixelSize, currentPixelSize - 1, currentPixelSize - 1);
         }
       }
+
+      ctx.restore();
+      requestAnimationFrame(draw);
     }
+
+    // --- Modal Kontrol Fonksiyonları ---
+    function openModal(modal) {
+        overlay.style.display = "block";
+        modal.style.display = "block";
+    }
+
+    function closeAllModals() {
+        overlay.style.display = "none";
+        for (const key in modals) {
+            modals[key].style.display = "none";
+        }
+    }
+
+    // --- Olay Dinleyicileri (Event Listeners) ---
+
+    // Canvas Olayları (Tıklama, Sürükleme, Yakınlaştırma)
+    canvas.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        canvas.style.cursor = 'grabbing';
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    });
+
+    canvas.addEventListener("mouseup", (e) => {
+        isDragging = false;
+        canvas.style.cursor = 'grab';
+    });
+    
+    canvas.addEventListener("mouseleave", () => {
+        isDragging = false;
+        canvas.style.cursor = 'grab';
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+            const dx = e.clientX - lastMouseX;
+            const dy = e.clientY - lastMouseY;
+            offsetX += dx;
+            offsetY += dy;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        }
+    });
 
     canvas.addEventListener("click", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = Math.floor((e.clientX - rect.left) / pixelSize);
-      const y = Math.floor((e.clientY - rect.top) / pixelSize);
-      const key = `${x}-${y}`;
+        // Eğer sürükleme sonrası mouseup ile click aynı anda tetiklenirse, tıklamayı yoksay
+        const dx = e.clientX - lastMouseX;
+        const dy = e.clientY - lastMouseY;
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+             return;
+        }
+      
+        // Tıklanan dünya koordinatını bul
+        const worldX = (e.clientX - offsetX) / scale;
+        const worldY = (e.clientY - offsetY) / scale;
+        
+        const x = Math.floor(worldX / initialPixelSize);
+        const y = Math.floor(worldY / initialPixelSize);
 
-      openPixelModal(key);
+        if (x < 0 || x >= worldWidth || y < 0 || y >= worldHeight) return;
+
+        const key = `${x}-${y}`;
+
+        if (kurdistanPixels.has(key)) {
+            openModal(modals.kurdistan);
+        } else if (seaPixels.has(key)) {
+            alert("Açık denizler satın alınamaz.");
+        } else {
+            document.getElementById("pixelIdText").innerText = key;
+            const message = encodeURIComponent(`Merhaba, ${key} ID'li pixeli satın almak istiyorum.`);
+            document.getElementById("buyButton").href = `https://t.me/TheOpenNationsDM?start=${message}`;
+            openModal(modals.pixel);
+        }
     });
 
-    function openPixelModal(pixelId) {
-      document.getElementById("pixelIdText").innerText = pixelId;
-      const message = encodeURIComponent(`Pixel ID: ${pixelId} | Tutar: 2.5 TON`);
-      document.getElementById("buyButton").href = `https://t.me/TheOpenNationsDM?start=${message}`;
+    canvas.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const zoomIntensity = 0.1;
+        const wheel = e.deltaY < 0 ? 1 : -1;
+        const zoom = Math.exp(wheel * zoomIntensity);
 
-      overlay.style.display = "block";
-      pixelModal.style.display = "block";
+        const newScale = Math.max(0.2, Math.min(5, scale * zoom)); // Min/Max zoom sınırı
 
-      // simulate ownership
-      pixels[pixelId] = { owner: 'you' };
-      drawPixels();
-    }
-
-    document.getElementById("infoIcon").addEventListener("click", () => {
-      overlay.style.display = "block";
-      infoModal.style.display = "block";
+        // Fare imlecinin olduğu noktaya doğru zoom yap
+        const mouseX = e.clientX - offsetX;
+        const mouseY = e.clientY - offsetY;
+        
+        offsetX = mouseX - (mouseX * newScale) / scale + offsetX;
+        offsetY = mouseY - (mouseY * newScale) / scale + offsetY;
+        
+        scale = newScale;
     });
 
-    overlay.addEventListener("click", closeModal);
+    // UI Eleman Olayları
+    document.getElementById("infoIcon").addEventListener("click", () => openModal(modals.info));
+    overlay.addEventListener("click", closeAllModals);
+    
+    // Alt Navigasyon Butonları
+    document.getElementById("profileBtn").addEventListener("click", () => openModal(modals.comingSoon));
+    document.getElementById("p2pBtn").addEventListener("click", () => openModal(modals.comingSoon));
+    document.getElementById("mapBtn").addEventListener("click", () => {
+        // Haritayı başlangıç konumuna ve zoom'una getir
+        scale = 1.0;
+        offsetX = (canvas.width - worldWidth * initialPixelSize) / 2;
+        offsetY = (canvas.height - worldHeight * initialPixelSize) / 2;
+    });
 
-    function closeModal() {
-      overlay.style.display = "none";
-      pixelModal.style.display = "none";
-      infoModal.style.display = "none";
+
+    // --- Başlangıç ---
+    function initialize() {
+        // Başlangıçta haritayı ortala
+        offsetX = (window.innerWidth - worldWidth * initialPixelSize) / 2;
+        offsetY = (window.innerHeight - worldHeight * initialPixelSize) / 2;
+        
+        // Simülasyon: Birkaç pixelin sahibi olalım
+        ownedPixels['30-30'] = { owner: 'you' };
+        ownedPixels['31-30'] = { owner: 'other' };
+
+        requestAnimationFrame(draw);
     }
 
-    drawPixels();
+    window.addEventListener('resize', () => {
+        // Ekran boyutu değiştiğinde yeniden çizim yapılır, böylece bozulma olmaz
+        // Yeniden boyutlandırma draw() döngüsü içinde ele alınıyor
+    });
+
+    initialize();
   </script>
 </body>
 </html>
