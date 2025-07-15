@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>The Open Nations</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <style>
     html, body {
       margin: 0;
@@ -12,12 +12,16 @@
       color: #eee;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow: hidden; /* Prevent page scroll */
+      /* Prevent bounce effect on iOS */
+      position: fixed;
     }
 
     canvas {
       display: block;
       cursor: grab;
       background-color: #111;
+      /* Improve touch performance */
+      touch-action: none;
     }
     canvas:active {
       cursor: grabbing;
@@ -331,44 +335,130 @@
 
     // --- Map & View Settings ---
     const initialPixelSize = 16;
-    const worldWidth = 400; // World width in pixels
-    const worldHeight = 200; // World height in pixels
+    const worldWidth = 400; 
+    const worldHeight = 200;
 
-    // Camera/View
     let scale = 0.5;
     let offsetX = 0;
     let offsetY = 0;
 
-    // Panning
-    let isDragging = false;
+    // --- Interaction State ---
+    let isPointerDown = false;
     let lastMouseX, lastMouseY;
-    let dragStartX, dragStartY;
-
+    let pointerStart = { x: 0, y: 0 };
+    let lastPinchDist = 0;
+    
     // --- Data Definitions ---
-    const ownedPixels = {}; // Owned pixels: {'x-y': {owner: 'you'}}
-
+    const ownedPixels = {};
     const seaPixels = new Set();
-    const seaBorder = 20;
-    for (let y = 0; y < worldHeight; y++) {
-        for (let x = 0; x < worldWidth; x++) {
-            if (y < seaBorder || y >= worldHeight - seaBorder || x < seaBorder || x >= worldWidth - seaBorder) {
-                seaPixels.add(`${x}-${y}`);
+    let kurdistanPixels; // Will be defined after world generation
+
+    // --- NEW: Procedural World Generation ---
+    function generateWorld() {
+        console.log("Generating a new world...");
+        const noise = new SimpleNoise();
+        const featureSize = 80; // Larger value = larger continents/islands
+        const seaLevel = 0.55; // 0.0 to 1.0. Higher value = more sea
+        
+        seaPixels.clear();
+
+        for (let y = 0; y < worldHeight; y++) {
+            for (let x = 0; x < worldWidth; x++) {
+                // Get a noise value between 0 and 1
+                let value = noise.get(x / featureSize, y / featureSize);
+
+                // Create a radial gradient to ensure edges are sea
+                const dx = x - worldWidth / 2;
+                const dy = y - worldHeight / 2;
+                const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+                const maxDist = worldWidth / 2;
+                const gradient = distFromCenter / maxDist; // 0 at center, 1 at edge
+                
+                // Lower the land height near the edges
+                value = (value * 1.2) - (gradient * gradient);
+
+                if (value < seaLevel) {
+                    seaPixels.add(`${x}-${y}`);
+                }
+            }
+        }
+        console.log("World generation complete.");
+    }
+
+    // A simple noise generator for more natural maps
+    function SimpleNoise() {
+        const p = new Uint8Array(512);
+        for(let i=0; i < 256; i++) p[i] = i;
+        for(let i=255; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [p[i], p[j]] = [p[j], p[i]];
+        }
+        for(let i=0; i < 256; i++) p[i+256] = p[i];
+
+        const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+        const lerp = (t, a, b) => a + t * (b - a);
+        const grad = (hash, x, y) => {
+            const h = hash & 15;
+            const u = h < 8 ? x : y;
+            const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
+            return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+        }
+
+        this.get = (x, y) => {
+            const X = Math.floor(x) & 255;
+            const Y = Math.floor(y) & 255;
+            x -= Math.floor(x);
+            y -= Math.floor(y);
+            const u = fade(x);
+            const v = fade(y);
+            const aa = p[p[X] + Y];
+            const ab = p[p[X] + Y + 1];
+            const ba = p[p[X + 1] + Y];
+            const bb = p[p[X + 1] + Y + 1];
+            
+            const res = lerp(v,
+                lerp(u, grad(p[aa], x, y), grad(p[ba], x - 1, y)),
+                lerp(u, grad(p[ab], x, y - 1), grad(p[bb], x - 1, y - 1))
+            );
+            return (res + 1) / 2; // Return value between 0 and 1
+        };
+    }
+
+    // Reposition the Kurdistan territory to a guaranteed land spot
+    function placeTerritories() {
+        let placed = false;
+        let attemptX = Math.floor(worldWidth * 0.5);
+        let attemptY = Math.floor(worldHeight * 0.5);
+
+        while(!placed) {
+            let isAllLand = true;
+            for(const coord of kurdistanPixelCoordsTemplate) {
+                if (seaPixels.has(`${coord.x + attemptX}-${coord.y + attemptY}`)) {
+                    isAllLand = false;
+                    break;
+                }
+            }
+            if(isAllLand) {
+                kurdistanPixels = new Set(kurdistanPixelCoordsTemplate.map(p => `${p.x + attemptX}-${p.y + attemptY}`));
+                placed = true;
+            } else {
+                attemptX += 5; // Move to a new spot and retry
+                if(attemptX > worldWidth) { // Failsafe
+                    console.error("Could not place Kurdistan territory on land.");
+                    kurdistanPixels = new Set();
+                    break;
+                }
             }
         }
     }
-    // Add some inland lakes for visual variety
-    for (let y = 80; y < 95; y++) for (let x = 100; x < 120; x++) seaPixels.add(`${x}-${y}`);
-    for (let y = 140; y < 150; y++) for (let x = 300; x < 315; x++) seaPixels.add(`${x}-${y}`);
 
-    const kurdistanPixelCoords = [
-        {x: 200, y: 100}, {x: 201, y: 100}, {x: 202, y: 100}, {x: 203, y: 100}, {x: 204, y: 100}, {x: 205, y: 100}, {x: 206, y: 100},
-        {x: 199, y: 101}, {x: 200, y: 101}, {x: 201, y: 101}, {x: 202, y: 101}, {x: 203, y: 101}, {x: 204, y: 101}, {x: 205, y: 101}, {x: 206, y: 101}, {x: 207, y: 101},
-        {x: 199, y: 102}, {x: 200, y: 102}, {x: 201, y: 102}, {x: 202, y: 102}, {x: 203, y: 102}, {x: 204, y: 102}, {x: 205, y: 102}, {x: 206, y: 102}, {x: 207, y: 102}, {x: 208, y: 102},
-        {x: 200, y: 103}, {x: 201, y: 103}, {x: 202, y: 103}, {x: 203, y: 103}, {x: 204, y: 103}, {x: 205, y: 103}, {x: 206, y: 103}, {x: 207, y: 103},
-        {x: 202, y: 104}, {x: 203, y: 104}, {x: 204, y: 104}, {x: 205, y: 104}, {x: 206, y: 104},
-        {x: 203, y: 105}, {x: 204, y: 105}, {x: 205, y: 105}
+    const kurdistanPixelCoordsTemplate = [
+        {x: 0, y: 0}, {x: 1, y: 0}, {x: 2, y: 0}, {x: 3, y: 0},
+        {x: -1, y: 1}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 2, y: 1}, {x: 3, y: 1},
+        {x: -1, y: 2}, {x: 0, y: 2}, {x: 1, y: 2}, {x: 2, y: 2}, {x: 3, y: 2},
+        {x: 0, y: 3}, {x: 1, y: 3}, {x: 2, y: 3},
+        {x: 1, y: 4}, {x: 2, y: 4},
     ];
-    const kurdistanPixels = new Set(kurdistanPixelCoords.map(p => `${p.x}-${p.y}`));
 
     // --- Drawing Function ---
     function draw() {
@@ -405,109 +495,140 @@
       ctx.restore();
       requestAnimationFrame(draw);
     }
-
-    // --- Modal Control ---
-    function openModal(modal) {
-        overlay.style.display = "block";
-        modal.style.display = "flex";
-    }
-
-    function closeAllModals() {
-        overlay.style.display = "none";
-        for (const key in modals) {
-            modals[key].style.display = "none";
-        }
-    }
-
-    // --- Event Listeners ---
-    canvas.addEventListener("mousedown", (e) => {
-        isDragging = true;
-        canvas.style.cursor = 'grabbing';
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-    });
-
-    canvas.addEventListener("mouseup", (e) => {
-        isDragging = false;
-        canvas.style.cursor = 'grab';
-    });
     
-    canvas.addEventListener("mouseleave", () => {
-        if(isDragging) {
-            isDragging = false;
-            canvas.style.cursor = 'grab';
+    // --- Event Handlers (Mouse & Touch) ---
+    function onPointerDown(e) {
+        isPointerDown = true;
+        canvas.style.cursor = 'grabbing';
+        if (e.type === 'mousedown') {
+            pointerStart.x = e.clientX;
+            pointerStart.y = e.clientY;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        } else { // Touch
+            pointerStart.x = e.touches[0].clientX;
+            pointerStart.y = e.touches[0].clientY;
+            lastMouseX = e.touches[0].clientX;
+            lastMouseY = e.touches[0].clientY;
+            if (e.touches.length === 2) {
+                lastPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            }
         }
-    });
+    }
 
-    canvas.addEventListener("mousemove", (e) => {
-        if (isDragging) {
+    function onPointerMove(e) {
+        if (!isPointerDown) return;
+        e.preventDefault(); // Prevent scrolling on mobile
+
+        if (e.type === 'mousemove') {
             const dx = e.clientX - lastMouseX;
             const dy = e.clientY - lastMouseY;
             offsetX += dx;
             offsetY += dy;
             lastMouseX = e.clientX;
             lastMouseY = e.clientY;
-        }
-    });
+        } else { // Touch
+            if (e.touches.length === 1) { // Pan
+                const dx = e.touches[0].clientX - lastMouseX;
+                const dy = e.touches[0].clientY - lastMouseY;
+                offsetX += dx;
+                offsetY += dy;
+                lastMouseX = e.touches[0].clientX;
+                lastMouseY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) { // Pinch Zoom
+                const currentPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const zoomFactor = currentPinchDist / lastPinchDist;
+                
+                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
 
-    canvas.addEventListener("click", (e) => {
-        const dragDistance = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
-        if (dragDistance > 5) return; // Ignore clicks that are actually small drags
-      
-        const worldX = (e.clientX - offsetX) / scale;
-        const worldY = (e.clientY - offsetY) / scale;
-        
+                const newScale = Math.max(0.1, Math.min(10, scale * zoomFactor));
+
+                const worldX = (midX - offsetX) / scale;
+                const worldY = (midY - offsetY) / scale;
+
+                offsetX = midX - worldX * newScale;
+                offsetY = midY - worldY * newScale;
+
+                scale = newScale;
+                lastPinchDist = currentPinchDist;
+            }
+        }
+    }
+
+    function onPointerUp(e) {
+        if (!isPointerDown) return;
+        isPointerDown = false;
+        canvas.style.cursor = 'grab';
+        lastPinchDist = 0;
+
+        // Handle clicks/taps
+        const endX = e.type === 'mouseup' ? e.clientX : e.changedTouches[0].clientX;
+        const endY = e.type === 'mouseup' ? e.clientY : e.changedTouches[0].clientY;
+        const dragDistance = Math.hypot(endX - pointerStart.x, endY - pointerStart.y);
+
+        if (dragDistance < 5) {
+            handleMapClick(endX, endY);
+        }
+    }
+
+    function handleMapClick(clientX, clientY) {
+        const worldX = (clientX - offsetX) / scale;
+        const worldY = (clientY - offsetY) / scale;
         const x = Math.floor(worldX / initialPixelSize);
         const y = Math.floor(worldY / initialPixelSize);
 
         if (x < 0 || x >= worldWidth || y < 0 || y >= worldHeight) return;
-
         const key = `${x}-${y}`;
 
-        if (kurdistanPixels.has(key)) {
-            openModal(modals.kurdistan);
-        } else if (seaPixels.has(key)) {
-            alert("Open seas cannot be purchased.");
-        } else {
+        if (kurdistanPixels.has(key)) openModal(modals.kurdistan);
+        else if (seaPixels.has(key)) alert("Open seas cannot be purchased.");
+        else {
             document.getElementById("pixelIdText").innerText = key;
             const message = encodeURIComponent(`Hello, I would like to buy the pixel with ID: ${key}`);
             document.getElementById("buyButton").href = `https://t.me/TheOpenNationsDM?start=${message}`;
             openModal(modals.pixel);
         }
-    });
-
+    }
+    
+    // Mouse Wheel Zoom
     canvas.addEventListener("wheel", (e) => {
         e.preventDefault();
         const zoomIntensity = 0.1;
-        const wheel = e.deltaY < 0 ? 1 : -1;
-        const zoom = Math.exp(wheel * zoomIntensity);
-        const newScale = Math.max(0.1, Math.min(10, scale * zoom));
-
-        const mouseX = e.clientX - offsetX;
-        const mouseY = e.clientY - offsetY;
-        
-        offsetX = mouseX - (mouseX * newScale) / scale + offsetX;
-        offsetY = mouseY - (mouseY * newScale) / scale + offsetY;
-        
+        const zoomFactor = Math.exp((e.deltaY < 0 ? 1 : -1) * zoomIntensity);
+        const newScale = Math.max(0.1, Math.min(10, scale * zoomFactor));
+        const worldX = (e.clientX - offsetX) / scale;
+        const worldY = (e.clientY - offsetY) / scale;
+        offsetX = e.clientX - worldX * newScale;
+        offsetY = e.clientY - worldY * newScale;
         scale = newScale;
     });
-    
-    // --- UI Element Listeners ---
+
+    // Attach all pointer events
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('mouseup', onPointerUp); // Use window to catch mouseup outside canvas
+    canvas.addEventListener('touchstart', onPointerDown);
+    canvas.addEventListener('touchmove', onPointerMove);
+    canvas.addEventListener('touchend', onPointerUp);
+
+
+    // --- Modal Control & UI Listeners ---
+    function openModal(modal) { overlay.style.display = "block"; modal.style.display = "flex"; }
+    function closeAllModals() { overlay.style.display = "none"; for (const key in modals) { modals[key].style.display = "none"; } }
+
     document.getElementById("infoIcon").addEventListener("click", () => openModal(modals.info));
     overlay.addEventListener("click", closeAllModals);
     
-    // --- Bottom Navigation Buttons ---
     document.getElementById("profileBtn").addEventListener("click", () => {
       const landsList = document.getElementById('landsList');
-      landsList.innerHTML = ''; // Clear previous list
-      // For this demo, we assume the user owns the Kurdistan pixels
-      kurdistanPixelCoords.forEach(coord => {
+      landsList.innerHTML = '';
+      kurdistanPixels.forEach(key => {
         const listItem = document.createElement('li');
-        listItem.textContent = `Pixel (${coord.x}, ${coord.y})`;
+        listItem.textContent = `Pixel (${key.replace('-',', ')})`;
         listItem.onclick = () => {
-          goToPixel(coord.x, coord.y);
+          const [x, y] = key.split('-').map(Number);
+          goToPixel(x, y);
         };
         landsList.appendChild(listItem);
       });
@@ -517,35 +638,28 @@
     document.getElementById("p2pBtn").addEventListener("click", () => openModal(modals.comingSoon));
     
     document.getElementById("mapBtn").addEventListener("click", () => {
-        // Reset view to the center of the world
         scale = 0.5;
         offsetX = (canvas.width - worldWidth * initialPixelSize * scale) / 2;
         offsetY = (canvas.height - worldHeight * initialPixelSize * scale) / 2;
     });
 
-    // --- Helper Functions ---
     function goToPixel(x, y) {
       closeAllModals();
-      scale = 4; // Zoom in close to the pixel
+      scale = 4;
       const targetX = x * initialPixelSize + initialPixelSize / 2;
       const targetY = y * initialPixelSize + initialPixelSize / 2;
-      
       offsetX = canvas.width / 2 - targetX * scale;
       offsetY = canvas.height / 2 - targetY * scale;
     }
 
     // --- Initialization ---
     function initialize() {
-        // Center the initial view
+        generateWorld();
+        placeTerritories();
         offsetX = (window.innerWidth - worldWidth * initialPixelSize * scale) / 2;
         offsetY = (window.innerHeight - worldHeight * initialPixelSize * scale) / 2;
-        
         requestAnimationFrame(draw);
     }
-
-    window.addEventListener('resize', () => {
-      // Handled by the draw loop, no extra logic needed here.
-    });
 
     initialize();
   </script>
