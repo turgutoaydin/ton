@@ -72,9 +72,15 @@
   <!-- 3D Kütüphaneleri -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
+  
+  <!-- Bloom (Parlama) Efekti için Gerekli Ek Script'ler -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  
   <!-- Harita Verisi ve Ana Mantık -->
   <script src="assets/js/mapData.js"></script>
+  <!-- Artık modül olarak çağırılmıyor, bu siyah ekran sorununu çözer -->
   <script src="assets/js/main.js"></script>
 </body>
 </html>
