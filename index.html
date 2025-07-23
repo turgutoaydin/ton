@@ -1,86 +1,30 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>The Open Nations - 3D World</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <link rel="stylesheet" href="assets/css/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Pixel Gezegen Haritası</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
-
-  <!-- 3D Sahne için Konteyner -->
-  <div id="world-container"></div>
-
-  <!-- Sabit UI Elemanları -->
-  <div id="header" class="fixed-ui">
-    <img id="logo" src="assets/images/logo.png" alt="Logo">
-    <div id="titleBlock">
-      <h1>The Open Nations</h1>
-      <p>3D Pixel Land World</p>
-    </div>
-  </div>
-  <img id="infoIcon" class="fixed-ui" src="https://img.icons8.com/ios-filled/100/ffffff/info--v1.png" alt="Info" title="Oyun Hakkında">
-  <div id="bottomNav" class="fixed-ui">
-      <div class="nav-item" id="profileBtn"><img src="https://img.icons8.com/ios-glyphs/90/ffffff/user-male-circle.png" alt="Profil"><span>Profil</span></div>
-      <div class="nav-item" id="mapBtn"><img src="https://img.icons8.com/ios-filled/100/ffffff/map.png" alt="Harita"><span>Harita</span></div>
-      <div class="nav-item" id="p2pBtn"><img src="https://img.icons8.com/ios-filled/100/ffffff/two-way-communication.png" alt="P2P"><span>P2P</span></div>
-  </div>
-
-  <!-- Overlay ve Modallar -->
-  <div class="modal-overlay" id="overlay"></div>
-
-  <!-- Dinamik Bölge Bilgi Modalı -->
-  <div class="modal" id="territoryModal">
-    <img id="territoryImage" src="" alt="Bölge Kapağı" class="modal-cover-image">
-    <div class="modal-content">
-        <h2 id="territoryTitle"></h2>
-        <p id="territoryDescription"></p>
-        <div id="territoryStatsContainer">
-            <!-- İstatistikler JS tarafından buraya eklenecek -->
+    <div class="container">
+        <div id="map-container">
+            <div id="3d-map"></div>
+            <div id="coordinates">X: 0, Y: 0</div>
+            <div id="capital-marker" class="capital"></div>
         </div>
-        <a id="territoryActionBtn" href="" target="_blank">
-            <button id="territoryActionText" class="contact-button"></button>
-        </a>
-        <button class="close-button" onclick="closeAllModals()">Kapat</button>
-    </div>
-  </div>
-
-  <!-- Diğer Modallar -->
-  <div class="modal" id="infoModal">
-    <div class="modal-content">
-      <img src="assets/images/logo.png" alt="Logo" class="info-logo">
-      <h2>Oyun Hakkında</h2>
-      <p>Her küp, 3D dünya haritası üzerinde bir toprak parçasını temsil eder. Seviyesi yükseldikçe küpün yüksekliği artar. Tüm işlemler TON üzerinden yapılır.</p>
-      <div class="info-section">
-        <img src="https://img.icons8.com/ios-glyphs/90/FFFFFF/wave--v1.png" alt="Deniz Sembolü" class="info-section-icon">
-        <div>
-          <h3>Açık Denizler Satın Alınamaz</h3>
-          <p>Haritadaki mavi alanlar okyanusları temsil eder ve kişisel olarak satın alınamaz.</p>
+        <div class="controls">
+            <button id="zoom-in">+</button>
+            <button id="zoom-out">-</button>
+            <button id="reset-view">Reset</button>
         </div>
-      </div>
-      <button class="close-button" onclick="closeAllModals()">Kapat</button>
+        <div class="info-panel">
+            <h2>The Open Nations</h2>
+            <p>Açık denizler hiçbir ulusa ait değildir</p>
+        </div>
     </div>
-  </div>
-  <div class="modal" id="comingSoonModal">
-    <div class="modal-content">
-      <h2>Çok Yakında</h2>
-      <p>Bu özellik şu anda geliştirme aşamasındadır.</p>
-      <button class="close-button" onclick="closeAllModals()">Kapat</button>
-    </div>
-  </div>
 
-  <!-- 3D Kütüphaneleri -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  
-  <!-- Bloom (Parlama) Efekti için Gerekli Ek Script'ler -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-  
-  <!-- Harita Verisi ve Ana Mantık -->
-  <script src="assets/js/mapData.js"></script>
-  <!-- Artık modül olarak çağırılmıyor, bu siyah ekran sorununu çözer -->
-  <script src="assets/js/main.js"></script>
+    <script src="assets/js/mapData.js"></script>
+    <script src="assets/js/main.js"></script>
 </body>
 </html>
