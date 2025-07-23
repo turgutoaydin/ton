@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Telegram 3D Pixel Land</title>
+    <title>TON Pixel World</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --ton-primary: #0088cc;
@@ -11,6 +12,12 @@
             --ton-accent: #2b5278;
             --ton-text: #e1e1e1;
             --ton-dark: #0e1621;
+            --ton-neon: #00ffff;
+            --btc-color: #f7931a;
+            --eth-color: #627eea;
+            --ton-color: #0088cc;
+            --lkur-color: #ff5555;
+            --wallet-color: #3bb34a;
         }
 
         * {
@@ -26,6 +33,7 @@
             color: var(--ton-text);
             overflow: hidden;
             height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
 
         #scene-container {
@@ -44,93 +52,258 @@
             font-size: 1.2rem;
             color: white;
             z-index: 100;
+            background: rgba(0,0,0,0.7);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 1px solid var(--ton-neon);
+            box-shadow: 0 0 15px var(--ton-neon);
         }
 
-        .info-panel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: rgba(23, 33, 43, 0.9);
-            padding: 15px;
-            border-top: 1px solid var(--ton-accent);
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
-            z-index: 10;
-        }
-
-        .info-panel.visible {
-            transform: translateY(0);
-        }
-
-        .info-panel h3 {
-            color: var(--ton-primary);
-            margin-bottom: 10px;
-        }
-
-        .close-btn {
+        /* Coordinates Display */
+        #coordinates {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(23, 33, 43, 0.9);
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 5;
+            border: 1px solid var(--ton-neon);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(0, 255, 255, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(0, 255, 255, 0.3); }
+        }
+
+        /* Offcanvas Panel */
+        #info-panel {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background: linear-gradient(135deg, #121a24, #0e1621);
+            z-index: 20;
+            transition: transform 0.3s ease;
+            border-right: 1px solid var(--ton-neon);
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+
+        #info-panel.visible {
+            transform: translateX(320px);
+        }
+
+        .panel-header {
+            padding: 20px;
+            background: rgba(0, 136, 204, 0.1);
+            border-bottom: 1px solid var(--ton-accent);
+            position: relative;
+        }
+
+        .panel-header h3 {
+            color: var(--ton-primary);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             background: none;
             border: none;
             color: var(--ton-text);
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
         }
 
-        .pixel-stats {
+        .banner {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(135deg, #0088cc, #0055aa);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            border-bottom: 2px solid var(--ton-neon);
+        }
+
+        .pixel-details {
+            padding: 0 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h4 {
+            color: var(--ton-neon);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            border-bottom: 1px solid var(--ton-accent);
+            padding-bottom: 5px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .detail-item .label {
+            color: #a1a1a1;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .detail-item .value {
+            font-weight: bold;
+        }
+
+        .social-links {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             margin-top: 15px;
         }
 
-        .stat-item {
-            background-color: var(--ton-accent);
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .stat-item .label {
-            font-size: 12px;
-            color: #a1a1a1;
-        }
-
-        .stat-item .value {
-            font-weight: bold;
-        }
-
-        #coordinates {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 5px 10px;
+        .social-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(43, 82, 120, 0.3);
+            padding: 8px 12px;
             border-radius: 5px;
-            font-size: 14px;
-            z-index: 5;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .social-link:hover {
+            background: rgba(43, 82, 120, 0.5);
+        }
+
+        .buy-button {
+            display: block;
+            width: 100%;
+            background: linear-gradient(135deg, var(--ton-primary), #006699);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 20px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 136, 204, 0.5);
+        }
+
+        /* Neon Grid Effect */
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: 
+                linear-gradient(90deg, rgba(0, 136, 204, 0.05) 1px, transparent 1px),
+                linear-gradient(rgba(0, 136, 204, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 1;
+        }
+
+        /* Special Buildings Highlight */
+        @keyframes buildingGlow {
+            0% { box-shadow: 0 0 5px currentColor; }
+            50% { box-shadow: 0 0 20px currentColor; }
+            100% { box-shadow: 0 0 5px currentColor; }
         }
     </style>
 </head>
 <body>
     <div id="scene-container"></div>
-    <div id="loading">Loading 3D World...</div>
-    <div id="coordinates">X: 0, Y: 0</div>
+    <div class="grid-lines"></div>
+    <div id="loading">TON Pixel World Loading...</div>
+    <div id="coordinates">X: 0, Z: 0</div>
 
-    <div id="info-panel" class="info-panel">
-        <button class="close-btn" id="close-info">×</button>
-        <h3 id="detail-title">Pixel Detayları</h3>
-        <div id="detail-content">
-            <p>Bir pixel seçiniz.</p>
+    <!-- Offcanvas Panel -->
+    <div id="info-panel">
+        <div class="panel-header">
+            <h3><i class="fas fa-map-marked-alt"></i> Pixel Details</h3>
+            <p id="pixel-location">0, 0</p>
+            <button class="close-btn" id="close-info"><i class="fas fa-times"></i></button>
         </div>
-        <div class="pixel-stats" id="detail-stats"></div>
+        
+        <div class="banner" id="banner">
+            THE OPEN NATIONS
+        </div>
+        
+        <div class="pixel-details">
+            <div class="detail-section">
+                <h4><i class="fas fa-info-circle"></i> Information</h4>
+                <div class="detail-item">
+                    <span class="label"><i class="fas fa-tag"></i> Type:</span>
+                    <span class="value" id="pixel-type">Land</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label"><i class="fas fa-layer-group"></i> Level:</span>
+                    <span class="value" id="pixel-level">1</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label"><i class="fas fa-coins"></i> Balance:</span>
+                    <span class="value" id="pixel-balance">0 TON</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label"><i class="fas fa-crown"></i> Owner:</span>
+                    <span class="value" id="pixel-owner">@telegramuser</span>
+                </div>
+            </div>
+            
+            <div class="detail-section">
+                <h4><i class="fas fa-link"></i> Links</h4>
+                <div class="social-links">
+                    <a href="#" class="social-link">
+                        <i class="fas fa-globe"></i> Website
+                    </a>
+                    <a href="#" class="social-link">
+                        <i class="fab fa-telegram"></i> Channel
+                    </a>
+                    <a href="#" class="social-link">
+                        <i class="fab fa-telegram"></i> Chat
+                    </a>
+                    <a href="#" class="social-link">
+                        <i class="fab fa-twitter"></i> Twitter
+                    </a>
+                </div>
+            </div>
+            
+            <button class="buy-button">
+                <i class="fas fa-shopping-cart"></i> Buy This Land
+            </button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
     <script>
+        // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
             // Scene setup
             const scene = new THREE.Scene();
@@ -140,6 +313,11 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             document.getElementById('scene-container').appendChild(renderer.domElement);
 
+            // Adjust camera for top-down view (Telegram Mini App style)
+            camera.position.set(0, 30, 0);
+            camera.lookAt(0, 0, 0);
+            camera.rotation.x = -Math.PI / 2;
+
             // Lighting
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene.add(ambientLight);
@@ -148,124 +326,257 @@
             directionalLight.position.set(10, 20, 10);
             scene.add(directionalLight);
 
-            // Controls
-            const controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = false;
-            controls.minDistance = 5;
-            controls.maxDistance = 50;
-            controls.maxPolarAngle = Math.PI * 0.9;
+            // Add neon grid to the scene
+            const gridHelper = new THREE.GridHelper(40, 40, 0x0088cc, 0x0088cc);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
 
-            // Camera position
-            camera.position.set(15, 15, 15);
-            controls.update();
-
-            // Create pixel world
-            const worldSize = 20;
-            const pixelSize = 1;
-            const worldHeight = 0.5;
-            const cubes = [];
-
-            // Materials
-            const materials = {
-                land: new THREE.MeshStandardMaterial({ color: 0x3a5f0b, roughness: 0.8 }),
-                water: new THREE.MeshStandardMaterial({ color: 0x1a3a5a, roughness: 0.2, metalness: 0.5 }),
-                mountain: new THREE.MeshStandardMaterial({ color: 0x5a5a5a, roughness: 0.7 }),
-                btc: new THREE.MeshStandardMaterial({ color: 0xf7931a, emissive: 0xf7931a, emissiveIntensity: 0.3 }),
-                eth: new THREE.MeshStandardMaterial({ color: 0x627eea, emissive: 0x627eea, emissiveIntensity: 0.3 }),
-                ton: new THREE.MeshStandardMaterial({ color: 0x0088cc, emissive: 0x0088cc, emissiveIntensity: 0.5 })
-            };
-
-            // Generate world
-            for (let x = 0; x < worldSize; x++) {
-                for (let z = 0; z < worldSize; z++) {
-                    // Determine terrain type
-                    let type = 'land';
-                    let height = worldHeight;
-                    let building = null;
-                    
-                    // Water areas
-                    if (
-                        (x > 5 && x < 8 && z > 5 && z < 15) ||
-                        (x > 12 && x < 15 && z > 5 && z < 15)
-                    ) {
-                        type = 'water';
-                        height = worldHeight * 0.3;
+            // Special buildings data
+            const specialBuildings = [
+                { 
+                    x: 0, z: 0, 
+                    name: "The Open Nations", 
+                    type: "capital", 
+                    color: 0xffffff,
+                    size: 2,
+                    data: {
+                        level: 10,
+                        balance: "1,000,000 TON",
+                        owner: "Community",
+                        links: {
+                            website: "https://opennations.com",
+                            channel: "https://t.me/opennations",
+                            chat: "https://t.me/opennationschat",
+                            twitter: "https://twitter.com/opennations"
+                        }
                     }
-                    
-                    // Mountains
-                    else if (Math.random() > 0.95) {
-                        type = 'mountain';
-                        height = worldHeight * (2 + Math.random() * 3);
+                },
+                { 
+                    x: 5, z: 5, 
+                    name: "LKURD Tower", 
+                    type: "lkurd", 
+                    color: 0xff5555,
+                    data: {
+                        level: 8,
+                        balance: "5,000,000 LKURD",
+                        owner: "@lkurdfoundation",
+                        links: {
+                            website: "https://lkurdtoken.com",
+                            channel: "https://t.me/lkurdchannel",
+                            chat: "https://t.me/lkurdchat",
+                            twitter: "https://twitter.com/lkurdtoken"
+                        }
                     }
-                    
-                    // Special buildings
-                    else if (Math.random() > 0.98) {
-                        const cryptoTypes = ['btc', 'eth', 'ton'];
-                        type = cryptoTypes[Math.floor(Math.random() * cryptoTypes.length)];
-                        height = worldHeight * (3 + Math.random() * 2);
-                        
-                        building = {
-                            name: `${type.toUpperCase()} Tower`,
-                            value: Math.floor(Math.random() * 1000),
-                            type: type
-                        };
+                },
+                { 
+                    x: -5, z: 5, 
+                    name: "BTC Vault", 
+                    type: "btc", 
+                    color: 0xf7931a,
+                    data: {
+                        level: 9,
+                        balance: "21 BTC",
+                        owner: "@btcwhale",
+                        links: {
+                            website: "https://bitcoin.org",
+                            channel: "https://t.me/bitcoin",
+                            chat: "https://t.me/bitcoinchat",
+                            twitter: "https://twitter.com/bitcoin"
+                        }
                     }
-                    
-                    // Create cube
-                    const geometry = new THREE.BoxGeometry(pixelSize, height, pixelSize);
-                    const material = materials[type];
-                    const cube = new THREE.Mesh(geometry, material);
-                    
-                    cube.position.set(
-                        x * pixelSize - worldSize/2,
-                        height/2,
-                        z * pixelSize - worldSize/2
-                    );
-                    
-                    // Store data
-                    cube.userData = {
-                        x: x,
-                        z: z,
-                        type: type,
-                        height: height,
-                        building: building
-                    };
-                    
-                    scene.add(cube);
-                    cubes.push(cube);
+                },
+                { 
+                    x: 5, z: -5, 
+                    name: "ETH Plaza", 
+                    type: "eth", 
+                    color: 0x627eea,
+                    data: {
+                        level: 8,
+                        balance: "10,000 ETH",
+                        owner: "@ethereumdev",
+                        links: {
+                            website: "https://ethereum.org",
+                            channel: "https://t.me/ethereum",
+                            chat: "https://t.me/ethereumchat",
+                            twitter: "https://twitter.com/ethereum"
+                        }
+                    }
+                },
+                { 
+                    x: -5, z: -5, 
+                    name: "TON Center", 
+                    type: "ton", 
+                    color: 0x0088cc,
+                    data: {
+                        level: 9,
+                        balance: "5,000,000 TON",
+                        owner: "@tonfoundation",
+                        links: {
+                            website: "https://ton.org",
+                            channel: "https://t.me/tonblockchain",
+                            chat: "https://t.me/tonchat",
+                            twitter: "https://twitter.com/ton_blockchain"
+                        }
+                    }
+                },
+                { 
+                    x: 0, z: 8, 
+                    name: "@wallet Hub", 
+                    type: "wallet", 
+                    color: 0x3bb34a,
+                    data: {
+                        level: 7,
+                        balance: "Service",
+                        owner: "Telegram",
+                        links: {
+                            website: "https://telegram.org",
+                            channel: "https://t.me/wallet",
+                            chat: "https://t.me/walletchat",
+                            twitter: "https://twitter.com/telegram"
+                        }
+                    }
+                }
+            ];
+
+            // Create water plane
+            const waterGeometry = new THREE.PlaneGeometry(40, 40);
+            const waterMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x1a3a5a, 
+                roughness: 0.2, 
+                metalness: 0.5,
+                transparent: true,
+                opacity: 0.8
+            });
+            const water = new THREE.Mesh(waterGeometry, waterMaterial);
+            water.rotation.x = -Math.PI / 2;
+            water.position.y = -0.1;
+            scene.add(water);
+
+            // Create land with elevation variations
+            const landGeometry = new THREE.PlaneGeometry(40, 40, 40, 40);
+            const landMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x3a5f0b, 
+                roughness: 0.8,
+                wireframe: false
+            });
+            
+            // Modify vertices for natural looking land
+            const land = new THREE.Mesh(landGeometry, landMaterial);
+            land.rotation.x = -Math.PI / 2;
+            
+            const vertices = landGeometry.attributes.position;
+            for (let i = 0; i < vertices.count; i++) {
+                const x = vertices.getX(i);
+                const z = vertices.getZ(i);
+                
+                // Avoid modifying area near special buildings
+                let nearBuilding = false;
+                for (const building of specialBuildings) {
+                    const dist = Math.sqrt(Math.pow(x - building.x, 2) + Math.pow(z - building.z, 2));
+                    if (dist < 3) {
+                        nearBuilding = true;
+                        break;
+                    }
+                }
+                
+                if (!nearBuilding) {
+                    // Random elevation with smooth transitions
+                    const elevation = Math.random() * 0.5;
+                    vertices.setY(i, elevation);
                 }
             }
+            
+            vertices.needsUpdate = true;
+            landGeometry.computeVertexNormals();
+            scene.add(land);
+
+            // Create special buildings
+            const buildings = [];
+            specialBuildings.forEach(building => {
+                const geometry = new THREE.BoxGeometry(building.size || 1, 3, building.size || 1);
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: building.color,
+                    emissive: building.color,
+                    emissiveIntensity: 0.3,
+                    metalness: 0.7,
+                    roughness: 0.3
+                });
+                
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(building.x, 1.5, building.z);
+                cube.userData = building;
+                
+                // Add wireframe for neon effect
+                const edges = new THREE.EdgesGeometry(geometry);
+                const line = new THREE.LineSegments(
+                    edges,
+                    new THREE.LineBasicMaterial({ 
+                        color: building.color, 
+                        transparent: true,
+                        opacity: 0.8,
+                        linewidth: 2
+                    })
+                );
+                cube.add(line);
+                
+                scene.add(cube);
+                buildings.push(cube);
+                
+                // Add pulsing glow effect
+                setInterval(() => {
+                    line.material.opacity = 0.5 + Math.random() * 0.5;
+                }, 1000);
+            });
 
             // Hide loading message
             document.getElementById('loading').style.display = 'none';
 
+            // Controls with adjusted sensitivity for Telegram Mini App
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 15;
+            controls.maxDistance = 50;
+            controls.maxPolarAngle = Math.PI * 0.5;
+            controls.minPolarAngle = Math.PI * 0.4;
+            
+            // Adjust pan sensitivity to prevent conflict with Telegram swipe down
+            controls.panSpeed = 0.5;
+            controls.rotateSpeed = 0.5;
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.PAN,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.ROTATE
+            };
+
             // Raycaster for click detection
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
+            const coordinatesDisplay = document.getElementById('coordinates');
             
             // Info panel elements
             const infoPanel = document.getElementById('info-panel');
             const closeInfoBtn = document.getElementById('close-info');
-            const detailTitle = document.getElementById('detail-title');
-            const detailContent = document.getElementById('detail-content');
-            const detailStats = document.getElementById('detail-stats');
-            const coordinatesDisplay = document.getElementById('coordinates');
+            const pixelLocation = document.getElementById('pixel-location');
+            const pixelType = document.getElementById('pixel-type');
+            const pixelLevel = document.getElementById('pixel-level');
+            const pixelBalance = document.getElementById('pixel-balance');
+            const pixelOwner = document.getElementById('pixel-owner');
+            const banner = document.getElementById('banner');
 
             // Click handler
             function onPointerMove(event) {
-                // Calculate mouse position in normalized device coordinates
                 mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                 mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
                 
-                // Update coordinates display
-                const worldPos = new THREE.Vector3();
                 raycaster.setFromCamera(mouse, camera);
-                raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0)), worldPos);
+                const intersects = raycaster.intersectObjects([land, ...buildings]);
                 
-                if (worldPos) {
-                    coordinatesDisplay.textContent = `X: ${Math.round(worldPos.x)}, Z: ${Math.round(worldPos.z)}`;
+                if (intersects.length > 0) {
+                    const point = intersects[0].point;
+                    coordinatesDisplay.textContent = `X: ${Math.round(point.x)}, Z: ${Math.round(point.z)}`;
                 }
             }
 
@@ -274,67 +585,46 @@
                 mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
                 
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(cubes);
+                const intersects = raycaster.intersectObjects([land, ...buildings]);
                 
                 if (intersects.length > 0) {
-                    const cube = intersects[0].object;
-                    const data = cube.userData;
+                    let data;
                     
-                    // Show info panel
-                    detailTitle.textContent = `Pixel (${data.x}, ${data.z})`;
-                    
-                    let content = '';
-                    let stats = '';
-                    
-                    if (data.building) {
-                        content = `
-                            <h4>${data.building.name}</h4>
-                            <p>This is a special ${data.type.toUpperCase()} building.</p>
-                            <p>Value: <strong>${data.building.value} ${data.type.toUpperCase()}</strong></p>
-                        `;
-                        
-                        stats = `
-                            <div class="stat-item">
-                                <div class="label">Type</div>
-                                <div class="value">${data.type.toUpperCase()}</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="label">Height</div>
-                                <div class="value">${data.height.toFixed(1)}</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="label">Coordinates</div>
-                                <div class="value">${data.x}, ${data.z}</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="label">Value</div>
-                                <div class="value">${data.building.value} ${data.type.toUpperCase()}</div>
-                            </div>
-                        `;
+                    // Check if we clicked a building
+                    const buildingIntersect = intersects.find(i => buildings.includes(i.object));
+                    if (buildingIntersect) {
+                        data = buildingIntersect.object.userData;
                     } else {
-                        content = `
-                            <p>This is a ${data.type} pixel.</p>
-                            <p>Height: <strong>${data.height.toFixed(1)}</strong></p>
-                        `;
-                        
-                        stats = `
-                            <div class="stat-item">
-                                <div class="label">Type</div>
-                                <div class="value">${data.type}</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="label">Height</div>
-                                <div class="value">${data.height.toFixed(1)}</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="label">Coordinates</div>
-                                <div class="value">${data.x}, ${data.z}</div>
-                            </div>
-                        `;
+                        // Clicked land
+                        const point = intersects[0].point;
+                        data = {
+                            x: Math.round(point.x),
+                            z: Math.round(point.z),
+                            type: "land",
+                            name: `Land (${Math.round(point.x)}, ${Math.round(point.z)})`,
+                            data: {
+                                level: Math.floor(Math.random() * 5) + 1,
+                                balance: `${Math.floor(Math.random() * 1000)} TON`,
+                                owner: `@user${Math.floor(Math.random() * 10000)}`,
+                                links: {
+                                    website: "#",
+                                    channel: "#",
+                                    chat: "#",
+                                    twitter: "#"
+                                }
+                            }
+                        };
                     }
                     
-                    detailContent.innerHTML = content;
-                    detailStats.innerHTML = stats;
+                    // Update info panel
+                    pixelLocation.textContent = `${data.x}, ${data.z}`;
+                    pixelType.textContent = data.type.toUpperCase();
+                    pixelLevel.textContent = data.data.level;
+                    pixelBalance.textContent = data.data.balance;
+                    pixelOwner.textContent = data.data.owner;
+                    banner.textContent = data.name;
+                    
+                    // Show info panel with animation
                     infoPanel.classList.add('visible');
                 }
             }
@@ -347,6 +637,7 @@
             window.addEventListener('pointermove', onPointerMove);
             window.addEventListener('pointerdown', onPointerDown);
             
+            // Handle window resize
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
