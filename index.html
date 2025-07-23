@@ -3,174 +3,578 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram 3D Pixel Land</title>
-    <!-- Bootstrap CSS for styling and offcanvas -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>TON Pixel World</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #0a192f; /* Telegram-inspired dark blue gradient */
-            color: #ffffff;
-            font-family: 'Arial', sans-serif;
+        :root {
+            --ton-primary: #0088cc;
+            --ton-secondary: #17212b;
+            --ton-accent: #2b5278;
+            --ton-text: #e1e1e1;
+            --ton-dark: #0e1621;
+            --ton-success: #3bb34a;
+            --ton-warning: #ffa500;
+            --ton-danger: #e64d4d;
         }
-        #scene-container {
-            width: 100vw;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: var(--ton-secondary);
+            color: var(--ton-text);
+            overflow: hidden;
+            height: 100vh;
+            perspective: 1000px;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
             height: 100vh;
         }
-        .offcanvas {
-            background: linear-gradient(135deg, #0088cc, #0055aa); /* Telegram blue gradient */
-            color: #ffffff;
+
+        header {
+            background-color: var(--ton-dark);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--ton-accent);
+        }
+
+        .logo {
+            color: var(--ton-primary);
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--ton-accent);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:active {
+            opacity: 0.8;
+        }
+
+        #world-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #pixel-world {
+            width: 10000px;
+            height: 10000px;
+            position: absolute;
+            transform-style: preserve-3d;
+            background-color: var(--ton-dark);
+            background-image: 
+                radial-gradient(circle at center, var(--ton-accent) 0%, var(--ton-dark) 70%);
+            transition: transform 0.3s ease-out;
+        }
+
+        .pixel {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            transform-style: preserve-3d;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .pixel:hover {
+            filter: brightness(1.2);
+            transform: translateZ(5px);
+        }
+
+        .land {
+            background-color: #3a5f0b;
+            box-shadow: inset 0 0 5px #2a4a0b;
+        }
+
+        .water {
+            background-color: #1a3a5a;
+            box-shadow: inset 0 0 5px #0a2a4a;
+        }
+
+        .mountain {
+            background-color: #5a5a5a;
+            box-shadow: inset 0 0 5px #3a3a3a;
+        }
+
+        .building {
+            background-color: var(--ton-primary);
+            box-shadow: 0 0 10px var(--ton-primary);
+            transform: translateZ(10px);
+        }
+
+        .btc {
+            background-color: #f7931a;
+            box-shadow: 0 0 10px #f7931a;
+        }
+
+        .eth {
+            background-color: #627eea;
+            box-shadow: 0 0 10px #627eea;
+        }
+
+        .ton {
+            background-color: #0088cc;
+            box-shadow: 0 0 15px #0088cc;
+            transform: translateZ(15px);
+        }
+
+        #coordinates {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 50;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
             width: 300px;
+            background-color: rgba(23, 33, 43, 0.9);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            border: 1px solid var(--ton-accent);
+            transform: translateX(0);
+            transition: transform 0.3s ease;
         }
-        .offcanvas-header {
-            background: #004080;
+
+        #info-panel.hidden {
+            transform: translateX(calc(100% + 20px));
         }
-        .offcanvas-title {
-            font-size: 1.5rem;
+
+        #info-panel h2 {
+            color: var(--ton-primary);
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        #info-panel p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        #info-panel .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--ton-text);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        #pixel-details {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--ton-dark);
+            padding: 15px;
+            border-top: 1px solid var(--ton-accent);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 200;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+
+        #pixel-details.visible {
+            transform: translateY(0);
+        }
+
+        #pixel-details h3 {
+            color: var(--ton-primary);
+            margin-bottom: 10px;
+        }
+
+        #pixel-details .close-details {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--ton-text);
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .pixel-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background-color: var(--ton-accent);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            color: #a1a1a1;
+        }
+
+        .stat-item .value {
             font-weight: bold;
         }
-        .offcanvas-body p {
-            margin: 0.5rem 0;
-        }
-        .pixel-text {
-            font-family: 'Courier New', monospace;
-            text-shadow: 2px 2px #000000;
-        }
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.2rem;
-            color: #ffffff;
+
+        @media (max-width: 768px) {
+            .pixel {
+                width: 15px;
+                height: 15px;
+            }
+
+            #info-panel {
+                width: 250px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="scene-container"></div>
-    <div id="loading">Loading...</div>
+    <div id="app">
+        <header>
+            <div class="logo">TON Pixel World</div>
+            <div class="controls">
+                <button id="zoom-in">+</button>
+                <button id="zoom-out">-</button>
+                <button id="reset-view">Reset</button>
+                <button id="toggle-info">Info</button>
+            </div>
+        </header>
 
-    <!-- Offcanvas Drawer for Planet Info -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="planetInfo" aria-labelledby="planetInfoLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title pixel-text" id="planetInfoLabel">Planet Info</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <div id="world-container">
+            <div id="pixel-world"></div>
+            <div id="coordinates">X: 0, Y: 0</div>
+            
+            <div id="info-panel" class="hidden">
+                <button class="close-btn" id="close-info">×</button>
+                <h2>Telegram TON Dünyası</h2>
+                <p>Bu 3D pixel dünya, Telegram'ın TON blockchain ekosistemini temsil eder.</p>
+                <p>Dünyada farklı bölgeler ve yapılar bulunmaktadır:</p>
+                <ul style="margin-left: 20px; margin-bottom: 10px;">
+                    <li>Mavi küpler - TON projeleri</li>
+                    <li>Turuncu küpler - Bitcoin bölgeleri</li>
+                    <li>Mor küpler - Ethereum bölgeleri</li>
+                    <li>Yeşil alanlar - Açık arazi</li>
+                    <li>Mavi alanlar - Su kaynakları</li>
+                </ul>
+                <p>Pixel'lere tıklayarak detaylı bilgi alabilirsiniz.</p>
+                <div class="pixel-stats">
+                    <div class="stat-item">
+                        <div class="label">Toplam Pixel</div>
+                        <div class="value">10,000</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">TON Binaları</div>
+                        <div class="value">42</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">BTC Binaları</div>
+                        <div class="value">18</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">ETH Binaları</div>
+                        <div class="value">24</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="offcanvas-body">
-            <p id="planet-name" class="pixel-text">Select a planet</p>
-            <p id="crypto-type" class="pixel-text">Crypto: None</p>
-            <p id="planet-desc" class="pixel-text">Click a terrain to view details.</p>
+
+        <div id="pixel-details">
+            <button class="close-details" id="close-details">×</button>
+            <h3 id="detail-title">Pixel Detayları</h3>
+            <div id="detail-content">
+                <p>Bir pixel seçiniz.</p>
+            </div>
+            <div class="pixel-stats" id="detail-stats"></div>
         </div>
     </div>
 
-    <!-- Three.js and Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Scene Setup
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('scene-container').appendChild(renderer.domElement);
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const worldContainer = document.getElementById('world-container');
+            const pixelWorld = document.getElementById('pixel-world');
+            const coordinatesDisplay = document.getElementById('coordinates');
+            const zoomInBtn = document.getElementById('zoom-in');
+            const zoomOutBtn = document.getElementById('zoom-out');
+            const resetViewBtn = document.getElementById('reset-view');
+            const toggleInfoBtn = document.getElementById('toggle-info');
+            const closeInfoBtn = document.getElementById('close-info');
+            const infoPanel = document.getElementById('info-panel');
+            const pixelDetails = document.getElementById('pixel-details');
+            const closeDetailsBtn = document.getElementById('close-details');
+            const detailTitle = document.getElementById('detail-title');
+            const detailContent = document.getElementById('detail-content');
+            const detailStats = document.getElementById('detail-stats');
 
-        // Hide loading message
-        document.getElementById('loading').style.display = 'none';
+            // World state
+            let scale = 1;
+            let posX = 0;
+            let posY = 0;
+            let isDragging = false;
+            let startX, startY;
+            const worldSize = 100;
+            const pixelSize = 20;
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-        directionalLight.position.set(10, 10, 10);
-        scene.add(directionalLight);
+            // Generate world data
+            const worldData = [];
+            const specialBuildings = [
+                { x: 50, y: 50, type: 'ton', name: 'TON Central', value: '1,000,000 TON' },
+                { x: 30, y: 30, type: 'btc', name: 'Bitcoin Tower', value: '21 BTC' },
+                { x: 70, y: 30, type: 'eth', name: 'Ethereum Plaza', value: '1,000 ETH' },
+                { x: 20, y: 70, type: 'ton', name: 'TON Labs', value: '500,000 TON' },
+                { x: 80, y: 70, type: 'btc', name: 'Satoshi Monument', value: '10 BTC' }
+            ];
 
-        // Camera Position
-        camera.position.set(10, 10, 10);
-        camera.lookAt(0, 0, 0);
+            // Generate terrain
+            for (let y = 0; y < worldSize; y++) {
+                for (let x = 0; x < worldSize; x++) {
+                    const pixel = {
+                        x,
+                        y,
+                        type: 'land',
+                        elevation: Math.random() > 0.7 ? Math.floor(Math.random() * 5) : 0
+                    };
 
-        // Planet Data
-        const planets = [
-            { name: "Bitconia", crypto: "BTC", desc: "A golden planet rich in Bitcoin deposits.", pos: [-4, 0, 0], color: 0xffd700 },
-            { name: "Etherion", crypto: "ETH", desc: "A misty world powered by Ethereum.", pos: [0, 0, 0], color: 0x4682b4 },
-            { name: "Tonara", crypto: "TON", desc: "A crystalline planet thriving on TON.", pos: [4, 0, 0], color: 0x00b7eb }
-        ];
+                    // Water areas
+                    if (
+                        (x > 10 && x < 30 && y > 10 && y < 30) ||
+                        (x > 60 && x < 80 && y > 60 && y < 80) ||
+                        (x > 40 && x < 60 && y > 20 && y < 40)
+                    ) {
+                        pixel.type = 'water';
+                        pixel.elevation = -1;
+                    }
 
-        // Create Pixelated Cubes (Terrains)
-        const cubes = [];
-        planets.forEach((planet, index) => {
-            const geometry = new THREE.BoxGeometry(2, 2, 2);
-            const material = new THREE.MeshStandardMaterial({
-                color: planet.color,
-                roughness: 0.7,
-                metalness: 0.3
-            });
-            const cube = new THREE.Mesh(geometry, material);
-            cube.position.set(planet.pos[0], planet.pos[1], planet.pos[2]);
-            cube.userData = planet; // Store planet data in cube
-            scene.add(cube);
-            cubes.push(cube);
-        });
+                    // Mountains
+                    if (Math.random() > 0.95) {
+                        pixel.type = 'mountain';
+                        pixel.elevation = 3 + Math.floor(Math.random() * 7);
+                    }
 
-        // Ground Plane (Pixelated Terrain)
-        const groundGeometry = new THREE.PlaneGeometry(20, 20);
-        const groundMaterial = new THREE.MeshStandardMaterial({
-            color: 0x333333,
-            roughness: 0.8,
-            metalness: 0.2
-        });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -1;
-        scene.add(ground);
+                    // Check for special buildings
+                    const building = specialBuildings.find(b => b.x === x && b.y === y);
+                    if (building) {
+                        pixel.type = building.type;
+                        pixel.elevation = 10 + Math.floor(Math.random() * 5);
+                        pixel.building = building;
+                    }
 
-        // Raycaster for Click Detection
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const offcanvas = new bootstrap.Offcanvas(document.getElementById('planetInfo'));
-
-        window.addEventListener('click', (event) => {
-            // Calculate mouse position in normalized device coordinates
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(cubes);
-
-            if (intersects.length > 0) {
-                const planet = intersects[0].object.userData;
-                document.getElementById('planet-name').textContent = planet.name;
-                document.getElementById('crypto-type').textContent = `Crypto: ${planet.crypto}`;
-                document.getElementById('planet-desc').textContent = planet.desc;
-                offcanvas.show();
+                    worldData.push(pixel);
+                }
             }
-        });
 
-        // Handle Window Resize
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+            // Render the world
+            function renderWorld() {
+                pixelWorld.innerHTML = '';
+                
+                worldData.forEach(pixel => {
+                    const pixelElement = document.createElement('div');
+                    pixelElement.className = `pixel ${pixel.type}`;
+                    
+                    // Position and size
+                    const size = pixelSize * scale;
+                    pixelElement.style.width = `${size}px`;
+                    pixelElement.style.height = `${size}px`;
+                    pixelElement.style.left = `${pixel.x * size}px`;
+                    pixelElement.style.top = `${pixel.y * size}px`;
+                    
+                    // Elevation (3D effect)
+                    const elevation = pixel.elevation * scale;
+                    pixelElement.style.transform = `translateZ(${elevation}px)`;
+                    
+                    // Add data attributes
+                    pixelElement.dataset.x = pixel.x;
+                    pixelElement.dataset.y = pixel.y;
+                    pixelElement.dataset.type = pixel.type;
+                    
+                    // Click event
+                    pixelElement.addEventListener('click', () => showPixelDetails(pixel));
+                    
+                    pixelWorld.appendChild(pixelElement);
+                });
+                
+                updateWorldPosition();
+            }
 
-        // Animation Loop
-        function animate() {
-            requestAnimationFrame(animate);
-            // Rotate cubes for visual effect
-            cubes.forEach(cube => {
-                cube.rotation.y += 0.01;
+            function updateWorldPosition() {
+                pixelWorld.style.transform = `translate3d(${posX}px, ${posY}px, 0) scale(${scale})`;
+                coordinatesDisplay.textContent = `X: ${Math.round(-posX/(pixelSize*scale))}, Y: ${Math.round(-posY/(pixelSize*scale))}`;
+            }
+
+            // Drag and zoom controls
+            worldContainer.addEventListener('mousedown', startDrag);
+            worldContainer.addEventListener('touchstart', startDrag);
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag);
+            
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+
+            function startDrag(e) {
+                isDragging = true;
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                startX = clientX - posX;
+                startY = clientY - posY;
+                e.preventDefault();
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                posX = clientX - startX;
+                posY = clientY - startY;
+                updateWorldPosition();
+                e.preventDefault();
+            }
+
+            function endDrag() {
+                isDragging = false;
+            }
+
+            zoomInBtn.addEventListener('click', () => {
+                if (scale < 3) {
+                    scale += 0.2;
+                    renderWorld();
+                }
             });
-            renderer.render(scene, camera);
-        }
-        animate();
 
-        // SPA-like Behavior: Update content dynamically
-        function updatePlanetInfo(planet) {
-            document.getElementById('planet-name').textContent = planet.name;
-            document.getElementById('crypto-type').textContent = `Crypto: ${planet.crypto}`;
-            document.getElementById('planet-desc').textContent = planet.desc;
-            offcanvas.show();
-        }
+            zoomOutBtn.addEventListener('click', () => {
+                if (scale > 0.5) {
+                    scale -= 0.2;
+                    renderWorld();
+                }
+            });
+
+            resetViewBtn.addEventListener('click', () => {
+                scale = 1;
+                posX = worldContainer.clientWidth / 2 - (worldSize * pixelSize * scale / 2);
+                posY = worldContainer.clientHeight / 2 - (worldSize * pixelSize * scale / 2);
+                renderWorld();
+            });
+
+            // Info panel toggle
+            toggleInfoBtn.addEventListener('click', () => {
+                infoPanel.classList.toggle('hidden');
+            });
+
+            closeInfoBtn.addEventListener('click', () => {
+                infoPanel.classList.add('hidden');
+            });
+
+            // Pixel details
+            function showPixelDetails(pixel) {
+                detailTitle.textContent = `Pixel (${pixel.x}, ${pixel.y})`;
+                
+                let content = '';
+                let stats = '';
+                
+                if (pixel.building) {
+                    content = `
+                        <h4>${pixel.building.name}</h4>
+                        <p>This is a special ${pixel.type.toUpperCase()} building in the TON Pixel World.</p>
+                        <p>Value: <strong>${pixel.building.value}</strong></p>
+                    `;
+                    
+                    stats = `
+                        <div class="stat-item">
+                            <div class="label">Type</div>
+                            <div class="value">${pixel.type.toUpperCase()}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Elevation</div>
+                            <div class="value">${pixel.elevation}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Coordinates</div>
+                            <div class="value">${pixel.x}, ${pixel.y}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Status</div>
+                            <div class="value">Premium</div>
+                        </div>
+                    `;
+                } else {
+                    content = `
+                        <p>This is a ${pixel.type} pixel in the TON Pixel World.</p>
+                        <p>Elevation: <strong>${pixel.elevation}</strong></p>
+                    `;
+                    
+                    stats = `
+                        <div class="stat-item">
+                            <div class="label">Type</div>
+                            <div class="value">${pixel.type}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Elevation</div>
+                            <div class="value">${pixel.elevation}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Coordinates</div>
+                            <div class="value">${pixel.x}, ${pixel.y}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="label">Status</div>
+                            <div class="value">Standard</div>
+                        </div>
+                    `;
+                }
+                
+                detailContent.innerHTML = content;
+                detailStats.innerHTML = stats;
+                pixelDetails.classList.add('visible');
+            }
+
+            closeDetailsBtn.addEventListener('click', () => {
+                pixelDetails.classList.remove('visible');
+            });
+
+            // Initial render
+            posX = worldContainer.clientWidth / 2 - (worldSize * pixelSize * scale / 2);
+            posY = worldContainer.clientHeight / 2 - (worldSize * pixelSize * scale / 2);
+            renderWorld();
+
+            // Window resize
+            window.addEventListener('resize', () => {
+                renderWorld();
+            });
+        });
     </script>
 </body>
 </html>
